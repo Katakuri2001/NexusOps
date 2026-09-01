@@ -4,6 +4,7 @@ node_modules/
 dist/
 .next/
 .vercel/
+.open-next/
 *.db
 *.db-journal
 .DS_Store
