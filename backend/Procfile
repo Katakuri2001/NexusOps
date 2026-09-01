@@ -1,1 +1,1 @@
-web: npx prisma generate && npx prisma db push --skip-generate && node dist/index.js
+web: bash start.sh

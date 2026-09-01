@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "npx prisma generate && npx prisma db push --skip-generate && npx ts-node src/utils/seed.ts && node dist/index.js",
+    "startCommand": "bash start.sh",
     "buildCommand": "npx tsc",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 300,
