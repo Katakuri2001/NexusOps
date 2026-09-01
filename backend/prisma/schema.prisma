@@ -1,0 +1,300 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  name          String
+  role          String   @default("CUSTOMER")
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  customer        Customer?
+  technician      Technician?
+  activityLogs    ActivityLog[]
+  maintenanceRecords MaintenanceRecord[] @relation("MaintenanceCreatedBy")
+
+  @@map("users")
+}
+
+model Customer {
+  id        String  @id @default(cuid())
+  userId    String  @unique
+  phone     String?
+  company   String?
+  address   String?
+
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  websites  Website[]
+  notifications Notification[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("customers")
+}
+
+model Technician {
+  id           String  @id @default(cuid())
+  userId       String  @unique
+  specialization String?
+
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignments  TechnicianWebsiteAssignment[]
+  permissions  TechnicianPermissionRecord[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("technicians")
+}
+
+model Website {
+  id          String   @id @default(cuid())
+  name        String
+  domain      String   @unique
+  description String?
+  developerName String?
+  status      String   @default("OPERATIONAL")
+  websiteType String?
+  launchDate  DateTime?
+  customerId  String
+
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  plan        Plan?
+  hosting     HostingService?
+  database    DatabaseService?
+  server      ServerService?
+  charges     AdditionalCharge[]
+  maintenance MaintenanceRecord[]
+  statusHistory WebsiteStatusHistory[]
+  notifications Notification[]
+  technicianAssignments TechnicianWebsiteAssignment[]
+  timeline    WebsiteTimeline[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("websites")
+}
+
+model Plan {
+  id          String   @id @default(cuid())
+  websiteId   String   @unique
+  name        String
+  description String?
+  price       Float
+  billingCycle String
+  features    String  @default("[]")
+  startDate   DateTime
+  renewalDate DateTime?
+  isActive    Boolean  @default(true)
+
+  website     Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("plans")
+}
+
+model HostingService {
+  id            String   @id @default(cuid())
+  websiteId     String   @unique
+  provider      String
+  status        String   @default("active")
+  cost          Float
+  billingCycle  String   @default("monthly")
+  startDate     DateTime
+  dueDate       DateTime
+  notes         String?
+
+  website       Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("hosting_services")
+}
+
+model DatabaseService {
+  id            String   @id @default(cuid())
+  websiteId     String   @unique
+  provider      String
+  status        String   @default("active")
+  monthlyCost   Float
+  billingCycle  String   @default("monthly")
+  startDate     DateTime
+  dueDate       DateTime
+  notes         String?
+
+  website       Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("database_services")
+}
+
+model ServerService {
+  id            String   @id @default(cuid())
+  websiteId     String   @unique
+  provider      String
+  status        String   @default("operational")
+  plan          String?
+  cost          Float
+  billingCycle  String   @default("monthly")
+  startDate     DateTime
+  dueDate       DateTime
+  notes         String?
+
+  website       Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("server_services")
+}
+
+model AdditionalCharge {
+  id          String   @id @default(cuid())
+  websiteId   String
+  description String
+  amount      Float
+  date        DateTime
+  billingType String   @default("ONE_TIME")
+  status      String   @default("pending")
+  notes       String?
+
+  website     Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("additional_charges")
+}
+
+model MaintenanceRecord {
+  id          String   @id @default(cuid())
+  websiteId   String
+  title       String
+  description String?
+  items       String   @default("[]")
+  status      String   @default("completed")
+  notes       String?
+  isInternal  Boolean  @default(false)
+  createdById String?
+
+  website     Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  createdBy   User?    @relation("MaintenanceCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("maintenance_records")
+}
+
+model WebsiteStatusHistory {
+  id          String   @id @default(cuid())
+  websiteId   String
+  status      String
+  reason      String?
+  description String?
+  updatedBy   String?
+
+  website     Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+
+  @@map("website_status_history")
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  websiteId   String?
+  customerId  String
+  title       String
+  message     String
+  type        String   @default("INFORMATION")
+  priority    String   @default("NORMAL")
+  isRead      Boolean  @default(false)
+
+  website     Website? @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("notifications")
+}
+
+model TechnicianWebsiteAssignment {
+  id            String   @id @default(cuid())
+  technicianId  String
+  websiteId     String
+
+  technician    Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  website       Website    @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+
+  @@unique([technicianId, websiteId])
+  @@map("technician_website_assignments")
+}
+
+model TechnicianPermissionRecord {
+  id            String   @id @default(cuid())
+  technicianId  String
+  websiteId     String
+  permission    String
+
+  technician    Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+
+  @@unique([technicianId, websiteId, permission])
+  @@map("technician_permissions")
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  metadata  String?
+  ipAddress String?
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+model WebsiteTimeline {
+  id          String   @id @default(cuid())
+  websiteId   String
+  title       String
+  description String?
+  icon        String?
+
+  website     Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+
+  @@index([websiteId, createdAt])
+  @@map("website_timeline")
+}
