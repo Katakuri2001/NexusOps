@@ -1,0 +1,14 @@
+name = "nexusops-api"
+main = "src/index.ts"
+compatibility_date = "2025-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "nexusops-db"
+database_id = "PLACEHOLDER_REPLACE_ME"
+
+[vars]
+FRONTEND_URL = "https://nexusops.pages.dev"
+JWT_ACCESS_EXPIRY = "15m"
+JWT_REFRESH_EXPIRY = "7d"
