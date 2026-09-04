@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { Env, AuthContext } from '../types';
 import { authenticate, authorize } from '../middleware/auth';
+import { camelCaseKeys } from '../db/transform';
 
 const websites = new Hono<{ Bindings: Env; Variables: { auth: AuthContext } }>();
 
@@ -13,27 +14,44 @@ websites.get('/', async (c) => {
 
   if (auth.role === 'OWNER') {
     result = await c.env.DB.prepare(`
-      SELECT w.*, cu.company as customer_company, u.name as customer_name
+      SELECT w.*, cu.company as customer_company, u.name as customer_name,
+             hs.cost as hosting_cost, hs.due_date as hosting_due_date, hs.status as hosting_status, hs.provider as hosting_provider,
+             p.name as plan_name, p.price as plan_price, p.billing_cycle as plan_billing_cycle, p.renewal_date as plan_renewal_date
       FROM websites w
       LEFT JOIN customers cu ON w.customer_id = cu.id
       LEFT JOIN users u ON cu.user_id = u.id
+      LEFT JOIN hosting_services hs ON w.id = hs.website_id
+      LEFT JOIN plans p ON w.id = p.website_id
       ORDER BY w.created_at DESC
     `).all();
   } else if (auth.role === 'CUSTOMER') {
     const customer = await c.env.DB.prepare('SELECT id FROM customers WHERE user_id = ?').bind(auth.userId).first();
     if (!customer) return c.json([]);
-    result = await c.env.DB.prepare('SELECT * FROM websites WHERE customer_id = ? ORDER BY created_at DESC').bind(customer.id).all();
+    result = await c.env.DB.prepare(`
+      SELECT w.*,
+             hs.cost as hosting_cost, hs.due_date as hosting_due_date, hs.status as hosting_status, hs.provider as hosting_provider,
+             p.name as plan_name, p.price as plan_price, p.billing_cycle as plan_billing_cycle, p.renewal_date as plan_renewal_date
+      FROM websites w
+      LEFT JOIN hosting_services hs ON w.id = hs.website_id
+      LEFT JOIN plans p ON w.id = p.website_id
+      WHERE w.customer_id = ? ORDER BY w.created_at DESC
+    `).bind(customer.id).all();
   } else {
     const assignments = await c.env.DB.prepare(`
-      SELECT w.* FROM websites w
+      SELECT w.*,
+             hs.cost as hosting_cost, hs.due_date as hosting_due_date, hs.status as hosting_status, hs.provider as hosting_provider,
+             p.name as plan_name, p.price as plan_price, p.billing_cycle as plan_billing_cycle, p.renewal_date as plan_renewal_date
+      FROM websites w
       JOIN technician_website_assignments twa ON w.id = twa.website_id
       JOIN technicians t ON twa.technician_id = t.id
+      LEFT JOIN hosting_services hs ON w.id = hs.website_id
+      LEFT JOIN plans p ON w.id = p.website_id
       WHERE t.user_id = ?
     `).bind(auth.userId).all();
     result = assignments;
   }
 
-  return c.json(result.results);
+  return c.json(camelCaseKeys(result.results));
 });
 
 // GET /:id - Get website by ID
@@ -53,7 +71,14 @@ websites.get('/:id', async (c) => {
     if (!hasAccess) return c.json({ error: 'Access denied' }, 403);
   }
 
-  return c.json(result);
+  const [hosting, database, server, plan] = await Promise.all([
+    c.env.DB.prepare('SELECT * FROM hosting_services WHERE website_id = ?').bind(c.req.param('id')).first(),
+    c.env.DB.prepare('SELECT * FROM database_services WHERE website_id = ?').bind(c.req.param('id')).first(),
+    c.env.DB.prepare('SELECT * FROM server_services WHERE website_id = ?').bind(c.req.param('id')).first(),
+    c.env.DB.prepare('SELECT * FROM plans WHERE website_id = ?').bind(c.req.param('id')).first(),
+  ]);
+
+  return c.json(camelCaseKeys({ ...result, hosting, database, server, plan }));
 });
 
 // POST / - Create website (OWNER only)
@@ -163,13 +188,13 @@ websites.get('/:id/financial', async (c) => {
 
   const monthlyTotal = (Number(plan?.price) || 0) + (Number(hosting?.cost) || 0) + (Number(db?.monthly_cost) || 0) + (Number(server?.cost) || 0);
 
-  return c.json({ plan, hosting, database: db, server, charges: charges.results, monthlyTotal });
+  return c.json(camelCaseKeys({ plan, hosting, database: db, server, charges: charges.results, monthlyTotal }));
 });
 
 // GET /:id/maintenance
 websites.get('/:id/maintenance', async (c) => {
   const result = await c.env.DB.prepare('SELECT * FROM maintenance_records WHERE website_id = ? ORDER BY created_at DESC').bind(c.req.param('id')).all();
-  return c.json(result.results.map(r => ({ ...r, items: typeof r.items === 'string' ? JSON.parse(r.items) : r.items })));
+  return c.json(camelCaseKeys(result.results.map(r => ({ ...r, items: typeof r.items === 'string' ? JSON.parse(r.items) : r.items }))));
 });
 
 // POST /:id/maintenance
@@ -194,13 +219,13 @@ websites.post('/:id/charges', authorize('OWNER'), async (c) => {
 // GET /:id/charges
 websites.get('/:id/charges', async (c) => {
   const result = await c.env.DB.prepare('SELECT * FROM additional_charges WHERE website_id = ? ORDER BY date DESC').bind(c.req.param('id')).all();
-  return c.json(result.results);
+  return c.json(camelCaseKeys(result.results));
 });
 
 // GET /:id/timeline
 websites.get('/:id/timeline', async (c) => {
   const result = await c.env.DB.prepare('SELECT * FROM website_timeline WHERE website_id = ? ORDER BY created_at DESC').bind(c.req.param('id')).all();
-  return c.json(result.results);
+  return c.json(camelCaseKeys(result.results));
 });
 
 // POST /:id/timeline
@@ -223,7 +248,7 @@ websites.post('/:id/notifications', authorize('OWNER'), async (c) => {
 // GET /:id/notifications
 websites.get('/:id/notifications', async (c) => {
   const result = await c.env.DB.prepare('SELECT * FROM notifications WHERE website_id = ? ORDER BY created_at DESC').bind(c.req.param('id')).all();
-  return c.json(result.results);
+  return c.json(camelCaseKeys(result.results));
 });
 
 // PATCH /:id/status

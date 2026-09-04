@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { Env, AuthContext } from '../types';
 import { authenticate, authorize } from '../middleware/auth';
+import { camelCaseKeys } from '../db/transform';
 
 const billing = new Hono<{ Bindings: Env; Variables: { auth: AuthContext } }>();
 
@@ -19,7 +20,7 @@ billing.get('/due-dates', async (c) => {
     LEFT JOIN server_services srv ON w.id = srv.website_id
     ORDER BY w.name
   `).all();
-  return c.json(result.results);
+  return c.json(camelCaseKeys(result.results));
 });
 
 export default billing;

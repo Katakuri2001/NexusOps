@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { Env, AuthContext } from '../types';
 import { signToken, verifyToken, authenticate } from '../middleware/auth';
 import { hashPassword, verifyPassword } from '../db/crypto';
+import { camelCaseKeys } from '../db/transform';
 
 type Variables = {
   auth: AuthContext;
@@ -58,7 +59,7 @@ auth.get('/me', authenticate(), async (c) => {
   const auth = c.get('auth');
   const user = await c.env.DB.prepare('SELECT id, email, name, role, is_active, created_at FROM users WHERE id = ?').bind(auth.userId).first();
   if (!user) return c.json({ error: 'User not found' }, 404);
-  return c.json(user);
+  return c.json(camelCaseKeys(user));
 });
 
 auth.post('/change-password', authenticate(), async (c) => {

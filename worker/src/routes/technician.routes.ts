@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { Env, AuthContext } from '../types';
 import { authenticate, authorize } from '../middleware/auth';
 import { hashPassword } from '../db/crypto';
+import { camelCaseKeys } from '../db/transform';
 
 const technicians = new Hono<{ Bindings: Env; Variables: { auth: AuthContext } }>();
 
@@ -14,7 +15,19 @@ technicians.get('/', async (c) => {
            u.id as user_id, u.email, u.name, u.role, u.is_active
     FROM technicians t JOIN users u ON t.user_id = u.id ORDER BY t.created_at DESC
   `).all();
-  return c.json(result.results);
+  
+  const techniciansWithAssignments = await Promise.all(
+    result.results.map(async (tech) => {
+      const assignments = await c.env.DB.prepare(`
+        SELECT w.id, w.name, w.domain FROM websites w
+        JOIN technician_website_assignments twa ON w.id = twa.website_id
+        WHERE twa.technician_id = ?
+      `).bind(tech.id).all();
+      return { ...tech, assignments: assignments.results };
+    })
+  );
+  
+  return c.json(camelCaseKeys(techniciansWithAssignments));
 });
 
 technicians.get('/:id', async (c) => {
@@ -24,7 +37,19 @@ technicians.get('/:id', async (c) => {
     FROM technicians t JOIN users u ON t.user_id = u.id WHERE t.id = ?
   `).bind(c.req.param('id')).first();
   if (!result) return c.json({ error: 'Technician not found' }, 404);
-  return c.json(result);
+  
+  const assignments = await c.env.DB.prepare(`
+    SELECT w.id, w.name, w.domain FROM websites w
+    JOIN technician_website_assignments twa ON w.id = twa.website_id
+    WHERE twa.technician_id = ?
+  `).bind(c.req.param('id')).all();
+  
+  const permissions = await c.env.DB.prepare(`
+    SELECT website_id, permission FROM technician_permissions
+    WHERE technician_id = ?
+  `).bind(c.req.param('id')).all();
+  
+  return c.json(camelCaseKeys({ ...result, assignments: assignments.results, permissions: permissions.results }));
 });
 
 technicians.post('/', async (c) => {

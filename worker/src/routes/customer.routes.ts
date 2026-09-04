@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { Env, AuthContext } from '../types';
 import { authenticate, authorize } from '../middleware/auth';
 import { hashPassword } from '../db/crypto';
+import { camelCaseKeys } from '../db/transform';
 
 const customers = new Hono<{ Bindings: Env; Variables: { auth: AuthContext } }>();
 
@@ -11,11 +12,12 @@ customers.use('/*', authorize('OWNER'));
 customers.get('/', async (c) => {
   const result = await c.env.DB.prepare(`
     SELECT c.id, c.phone, c.company, c.address, c.created_at, c.updated_at,
-           u.id as user_id, u.email, u.name, u.role, u.is_active
+           u.id as user_id, u.email, u.name, u.role, u.is_active,
+           (SELECT COUNT(*) FROM websites WHERE customer_id = c.id) as websites_count
     FROM customers c JOIN users u ON c.user_id = u.id
     ORDER BY c.created_at DESC
   `).all();
-  return c.json(result.results);
+  return c.json(camelCaseKeys(result.results));
 });
 
 customers.get('/:id', async (c) => {
@@ -25,7 +27,8 @@ customers.get('/:id', async (c) => {
     FROM customers c JOIN users u ON c.user_id = u.id WHERE c.id = ?
   `).bind(c.req.param('id')).first();
   if (!result) return c.json({ error: 'Customer not found' }, 404);
-  return c.json(result);
+  const websites = await c.env.DB.prepare('SELECT * FROM websites WHERE customer_id = ?').bind(c.req.param('id')).all();
+  return c.json(camelCaseKeys({ ...result, websites: websites.results }));
 });
 
 customers.post('/', async (c) => {

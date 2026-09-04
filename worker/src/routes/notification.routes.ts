@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { Env, AuthContext } from '../types';
 import { authenticate, authorize } from '../middleware/auth';
+import { camelCaseKeys } from '../db/transform';
 
 const notifications = new Hono<{ Bindings: Env; Variables: { auth: AuthContext } }>();
 
@@ -10,13 +11,26 @@ notifications.get('/', async (c) => {
   const auth = c.get('auth') as AuthContext;
   let result;
   if (auth.role === 'OWNER') {
-    result = await c.env.DB.prepare('SELECT * FROM notifications ORDER BY created_at DESC LIMIT 50').all();
+    result = await c.env.DB.prepare(`
+      SELECT n.*, w.name as website_name, u.name as customer_name
+      FROM notifications n
+      LEFT JOIN websites w ON n.website_id = w.id
+      LEFT JOIN customers c ON n.customer_id = c.id
+      LEFT JOIN users u ON c.user_id = u.id
+      ORDER BY n.created_at DESC LIMIT 50
+    `).all();
   } else {
     const customer = await c.env.DB.prepare('SELECT id FROM customers WHERE user_id = ?').bind(auth.userId).first();
     if (!customer) return c.json([]);
-    result = await c.env.DB.prepare('SELECT * FROM notifications WHERE customer_id = ? ORDER BY created_at DESC').bind(customer.id).all();
+    result = await c.env.DB.prepare(`
+      SELECT n.*, w.name as website_name
+      FROM notifications n
+      LEFT JOIN websites w ON n.website_id = w.id
+      WHERE n.customer_id = ?
+      ORDER BY n.created_at DESC
+    `).bind(customer.id).all();
   }
-  return c.json(result.results);
+  return c.json(camelCaseKeys(result.results));
 });
 
 notifications.get('/unread-count', async (c) => {

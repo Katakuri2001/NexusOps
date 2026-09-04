@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { Env, AuthContext } from '../types';
 import { authenticate, authorize } from '../middleware/auth';
+import { camelCaseKeys } from '../db/transform';
 
 const charges = new Hono<{ Bindings: Env; Variables: { auth: AuthContext } }>();
 
@@ -13,12 +14,12 @@ charges.get('/upcoming', async (c) => {
     JOIN websites w ON ac.website_id = w.id
     WHERE ac.status = 'pending' ORDER BY ac.date ASC
   `).all();
-  return c.json(result.results);
+  return c.json(camelCaseKeys(result.results));
 });
 
 charges.get('/website/:websiteId', async (c) => {
   const result = await c.env.DB.prepare('SELECT * FROM additional_charges WHERE website_id = ? ORDER BY date DESC').bind(c.req.param('websiteId')).all();
-  return c.json(result.results);
+  return c.json(camelCaseKeys(result.results));
 });
 
 charges.post('/website/:websiteId', async (c) => {

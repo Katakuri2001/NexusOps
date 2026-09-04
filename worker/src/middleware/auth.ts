@@ -9,11 +9,10 @@ function getSecret(key: string) {
 }
 
 export async function signToken(payload: Omit<JwtPayload, 'iat' | 'exp'>, secret: string, expiresIn: string): Promise<string> {
-  const exp = parseExpiry(expiresIn);
   return new jose.SignJWT({ ...payload })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime(exp)
+    .setExpirationTime(expiresIn)
     .sign(getSecret(secret));
 }
 
