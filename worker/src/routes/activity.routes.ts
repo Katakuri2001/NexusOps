@@ -9,12 +9,12 @@ activity.use('/*', authenticate());
 activity.use('/*', authorize('OWNER'));
 
 activity.get('/', async (c) => {
-  const result = await c.env.DB.prepare('SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT 100').all();
+  const result = await c.env.NEXUS_OPS.prepare('SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT 100').all();
   return c.json(camelCaseKeys(result.results));
 });
 
 activity.get('/:entity/:entityId', async (c) => {
-  const result = await c.env.DB.prepare('SELECT * FROM activity_logs WHERE entity = ? AND entity_id = ? ORDER BY created_at DESC').bind(c.req.param('entity'), c.req.param('entityId')).all();
+  const result = await c.env.NEXUS_OPS.prepare('SELECT * FROM activity_logs WHERE entity = ? AND entity_id = ? ORDER BY created_at DESC').bind(c.req.param('entity'), c.req.param('entityId')).all();
   return c.json(camelCaseKeys(result.results));
 });
 

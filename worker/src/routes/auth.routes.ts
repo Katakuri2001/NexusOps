@@ -14,7 +14,7 @@ auth.post('/login', async (c) => {
   const { email, password } = await c.req.json();
   if (!email || !password) return c.json({ error: 'Email and password required' }, 400);
 
-  const user = await c.env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(email).first();
+  const user = await c.env.NEXUS_OPS.prepare('SELECT * FROM users WHERE email = ?').bind(email).first();
   if (!user) return c.json({ error: 'Invalid credentials' }, 401);
   if (!user.is_active) return c.json({ error: 'Account disabled' }, 403);
 
@@ -40,7 +40,7 @@ auth.post('/refresh', async (c) => {
   const payload = await verifyToken(refreshToken, c.env.JWT_REFRESH_SECRET);
   if (!payload || payload.type !== 'refresh') return c.json({ error: 'Invalid refresh token' }, 401);
 
-  const user = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(payload.sub).first();
+  const user = await c.env.NEXUS_OPS.prepare('SELECT * FROM users WHERE id = ?').bind(payload.sub).first();
   if (!user || !user.is_active) return c.json({ error: 'User not found or disabled' }, 401);
 
   const newAccessToken = await signToken(
@@ -57,7 +57,7 @@ auth.post('/refresh', async (c) => {
 
 auth.get('/me', authenticate(), async (c) => {
   const auth = c.get('auth');
-  const user = await c.env.DB.prepare('SELECT id, email, name, role, is_active, created_at FROM users WHERE id = ?').bind(auth.userId).first();
+  const user = await c.env.NEXUS_OPS.prepare('SELECT id, email, name, role, is_active, created_at FROM users WHERE id = ?').bind(auth.userId).first();
   if (!user) return c.json({ error: 'User not found' }, 404);
   return c.json(camelCaseKeys(user));
 });
@@ -68,14 +68,14 @@ auth.post('/change-password', authenticate(), async (c) => {
   if (!currentPassword || !newPassword) return c.json({ error: 'Current and new password required' }, 400);
   if (newPassword.length < 8) return c.json({ error: 'Password must be at least 8 characters' }, 400);
 
-  const user = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(auth.userId).first();
+  const user = await c.env.NEXUS_OPS.prepare('SELECT * FROM users WHERE id = ?').bind(auth.userId).first();
   if (!user) return c.json({ error: 'User not found' }, 404);
 
   const valid = await verifyPassword(currentPassword, user.password_hash as string);
   if (!valid) return c.json({ error: 'Current password is incorrect' }, 401);
 
   const newHash = await hashPassword(newPassword);
-  await c.env.DB.prepare('UPDATE users SET password_hash = ?, updated_at = datetime("now") WHERE id = ?').bind(newHash, auth.userId).run();
+  await c.env.NEXUS_OPS.prepare('UPDATE users SET password_hash = ?, updated_at = datetime("now") WHERE id = ?').bind(newHash, auth.userId).run();
 
   return c.json({ message: 'Password changed successfully' });
 });

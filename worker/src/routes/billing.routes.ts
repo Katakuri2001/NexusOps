@@ -9,7 +9,7 @@ billing.use('/*', authenticate());
 billing.use('/*', authorize('OWNER'));
 
 billing.get('/due-dates', async (c) => {
-  const result = await c.env.DB.prepare(`
+  const result = await c.env.NEXUS_OPS.prepare(`
     SELECT w.name as website_name, w.id as website_id,
            hs.due_date as hosting_due, hs.provider as hosting_provider, hs.cost as hosting_cost,
            ds.due_date as database_due, ds.provider as database_provider, ds.monthly_cost as database_cost,

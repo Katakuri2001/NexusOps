@@ -1,12 +1,12 @@
-name = "nexusops-api"
+name = "nexusops"
 main = "src/index.ts"
 compatibility_date = "2025-09-01"
 compatibility_flags = ["nodejs_compat"]
 
 [[d1_databases]]
-binding = "DB"
-database_name = "nexusops-db"
-database_id = "PLACEHOLDER_REPLACE_ME"
+binding = "NEXUS_OPS"
+database_name = "nexusops"
+database_id = "d7f86c89-708f-4709-99d8-b1f7cec26295"
 
 [vars]
 FRONTEND_URL = "https://nexusops.pages.dev"
