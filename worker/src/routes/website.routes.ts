@@ -84,27 +84,27 @@ websites.get('/:id', async (c) => {
 // POST / - Create website (OWNER only)
 websites.post('/', authorize('OWNER'), async (c) => {
   const { name, domain, description, developerName, status, websiteType, launchDate, customerId } = await c.req.json();
-  if (!name || !domain || !customerId) return c.json({ error: 'Name, domain, and customerId required' }, 400);
+  if (!name || !domain) return c.json({ error: 'Name and domain required' }, 400);
 
   const id = crypto.randomUUID();
   await c.env.NEXUS_OPS.prepare(`
     INSERT INTO websites (id, name, domain, description, developer_name, status, website_type, launch_date, customer_id)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(id, name, domain, description || null, developerName || null, status || 'OPERATIONAL', websiteType || null, launchDate || null, customerId).run();
+  `).bind(id, name, domain, description || null, developerName || null, status || (customerId ? 'OPERATIONAL' : 'DEVELOPMENT'), websiteType || null, launchDate || null, customerId || null).run();
 
   return c.json({ id, name, domain }, 201);
 });
 
 // PUT /:id - Update website (OWNER only)
 websites.put('/:id', authorize('OWNER'), async (c) => {
-  const { name, domain, description, developerName, status, websiteType, launchDate } = await c.req.json();
+  const { name, domain, description, developerName, status, websiteType, launchDate, customerId } = await c.req.json();
   await c.env.NEXUS_OPS.prepare(`
     UPDATE websites SET name = COALESCE(?, name), domain = COALESCE(?, domain),
     description = COALESCE(?, description), developer_name = COALESCE(?, developer_name),
     status = COALESCE(?, status), website_type = COALESCE(?, website_type),
-    launch_date = COALESCE(?, launch_date), updated_at = datetime('now')
+    launch_date = COALESCE(?, launch_date), customer_id = COALESCE(?, customer_id), updated_at = datetime('now')
     WHERE id = ?
-  `).bind(name || null, domain || null, description || null, developerName || null, status || null, websiteType || null, launchDate || null, c.req.param('id')).run();
+  `).bind(name || null, domain || null, description || null, developerName || null, status || null, websiteType || null, launchDate || null, customerId || null, c.req.param('id')).run();
   return c.json({ message: 'Website updated' });
 });
 
