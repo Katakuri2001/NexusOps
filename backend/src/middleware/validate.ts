@@ -8,7 +8,7 @@ export const createWebsiteSchema = z.object({
   status: z.enum(['OPERATIONAL', 'MAINTENANCE', 'ATTENTION_REQUIRED', 'OFFLINE', 'DEVELOPMENT', 'SUSPENDED']).optional(),
   websiteType: z.string().max(50).optional(),
   launchDate: z.string().optional(),
-  customerId: z.string().min(1, 'Customer is required'),
+  customerId: z.string().min(1, 'Customer is required').optional(),
 });
 
 export const updateWebsiteSchema = z.object({
@@ -19,6 +19,7 @@ export const updateWebsiteSchema = z.object({
   status: z.enum(['OPERATIONAL', 'MAINTENANCE', 'ATTENTION_REQUIRED', 'OFFLINE', 'DEVELOPMENT', 'SUSPENDED']).optional(),
   websiteType: z.string().max(50).optional(),
   launchDate: z.string().optional(),
+  customerId: z.string().min(1, 'Customer is required').optional(),
 });
 
 export const createCustomerSchema = z.object({

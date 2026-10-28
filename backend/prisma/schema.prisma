@@ -66,9 +66,9 @@ model Website {
   status      String   @default("OPERATIONAL")
   websiteType String?
   launchDate  DateTime?
-  customerId  String
+  customerId  String?
 
-  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer    Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   plan        Plan?
   hosting     HostingService?

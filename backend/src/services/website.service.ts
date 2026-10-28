@@ -9,7 +9,7 @@ export class WebsiteService {
     status?: string;
     websiteType?: string;
     launchDate?: Date;
-    customerId: string;
+    customerId?: string;
   }) {
     const website = await prisma.website.create({
       data: {
@@ -17,7 +17,7 @@ export class WebsiteService {
         domain: data.domain,
         description: data.description,
         developerName: data.developerName,
-        status: data.status || 'DEVELOPMENT',
+        status: data.status || (data.customerId ? 'OPERATIONAL' : 'DEVELOPMENT'),
         websiteType: data.websiteType,
         launchDate: data.launchDate,
         customerId: data.customerId,
@@ -139,13 +139,19 @@ export class WebsiteService {
   }
 
   static async update(id: string, data: any) {
-    return prisma.website.update({
+    const { customerId, ...rest } = data || {};
+    const website = await prisma.website.update({
       where: { id },
-      data,
+      data: {
+        ...rest,
+        ...(customerId !== undefined ? { customerId } : {}),
+      },
       include: {
         customer: { include: { user: { select: { name: true, email: true } } } },
       },
     });
+
+    return website;
   }
 
   static async delete(id: string) {

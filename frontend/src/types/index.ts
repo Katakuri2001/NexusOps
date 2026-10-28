@@ -49,7 +49,7 @@ export interface Website {
   status: WebsiteStatus;
   websiteType?: string;
   launchDate?: string;
-  customerId: string;
+  customerId?: string;
   customer?: Customer;
   plan?: Plan;
   hosting?: HostingService;

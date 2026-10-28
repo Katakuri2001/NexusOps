@@ -306,6 +306,11 @@ router.post('/:id/notifications', authorize('OWNER'), async (req: any, res: Resp
       return;
     }
 
+    if (!website.customerId) {
+      res.status(400).json({ error: 'Cannot send notification: website has no customer assigned yet' });
+      return;
+    }
+
     const notification = await NotificationService.create({
       ...req.body,
       websiteId: req.params.id as string,

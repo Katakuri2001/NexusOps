@@ -35,8 +35,8 @@ export default function CreateWebsiteDialog({ open, onClose, onCreated }: Create
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.domain || !form.customerId) {
-      toast('error', 'Name, domain, and customer are required');
+    if (!form.name || !form.domain) {
+      toast('error', 'Name and domain are required');
       return;
     }
 
@@ -48,7 +48,7 @@ export default function CreateWebsiteDialog({ open, onClose, onCreated }: Create
         description: form.description || undefined,
         developerName: form.developerName || undefined,
         websiteType: form.websiteType || undefined,
-        customerId: form.customerId,
+        customerId: form.customerId || undefined,
         status: form.status,
       });
       toast('success', 'Website created successfully');
@@ -72,14 +72,13 @@ export default function CreateWebsiteDialog({ open, onClose, onCreated }: Create
           <div className="space-y-4">
             {/* Customer */}
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-foreground-secondary">Customer *</label>
+              <label className="block text-sm font-medium text-foreground-secondary">Customer</label>
               <select
                 value={form.customerId}
                 onChange={set('customerId')}
                 className="w-full h-10 px-3 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
-                required
               >
-                <option value="">Select customer</option>
+                <option value="">— No customer yet —</option>
                 {customers.map((c: any) => (
                   <option key={c.id} value={c.id}>{c.user?.name || c.name} — {c.user?.email}</option>
                 ))}
