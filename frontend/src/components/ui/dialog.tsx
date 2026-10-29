@@ -31,7 +31,7 @@ export function Dialog({ open, onClose, children, className }: DialogProps) {
             exit={{ opacity: 0, scale: 0.97, y: 4 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             className={cn(
-              "relative w-full max-w-lg glass-strong rounded-2xl shadow-2xl overflow-hidden",
+              "relative w-full max-w-[calc(100vw-2rem)] sm:max-w-lg glass-strong rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col",
               className
             )}
           >
@@ -71,7 +71,7 @@ interface DialogContentProps {
 }
 
 export function DialogContent({ children, className }: DialogContentProps) {
-  return <div className={cn("px-6 py-5", className)}>{children}</div>;
+  return <div className={cn("px-6 py-5 overflow-y-auto flex-1", className)}>{children}</div>;
 }
 
 interface DialogFooterProps {

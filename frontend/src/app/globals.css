@@ -264,6 +264,13 @@ body::before {
   border-radius: 6px;
 }
 
+/* ── Touch targets on mobile ── */
+@media (max-width: 639px) {
+  button, a[role="button"], [role="button"] {
+    min-height: 40px;
+  }
+}
+
 /* ── Respect reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
