@@ -18,7 +18,13 @@ const app = new Hono<{ Bindings: Env }>();
 
 // CORS
 app.use('*', cors({
-  origin: '*',
+  origin: (origin, c) => {
+    const env = (c as any).env as Env;
+    const allowed = (env?.FRONTEND_URL || '').split(',').map((u: string) => u.trim()).filter(Boolean);
+    if (allowed.length === 0) return origin || '*';
+    if (origin && allowed.includes(origin)) return origin;
+    return allowed[0];
+  },
   credentials: true,
   allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],

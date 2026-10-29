@@ -2,7 +2,8 @@ name = "nexusops"
 main = "src/index.ts"
 compatibility_date = "2025-09-01"
 compatibility_flags = ["nodejs_compat"]
-cron = "*/5 * * * *"
+[triggers]
+crons = ["*/5 * * * *"]
 
 [[d1_databases]]
 binding = "NEXUS_OPS"
@@ -13,5 +14,3 @@ database_id = "d7f86c89-708f-4709-99d8-b1f7cec26295"
 FRONTEND_URL = "https://nexusops.pages.dev"
 JWT_ACCESS_EXPIRY = "15m"
 JWT_REFRESH_EXPIRY = "7d"
-JWT_ACCESS_SECRET = "nexusops-dev-access-secret-min-32-chars-long"
-JWT_REFRESH_SECRET = "nexusops-dev-refresh-secret-min-32-chars-long"
