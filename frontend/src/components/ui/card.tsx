@@ -12,12 +12,12 @@ interface CardProps {
   glass?: boolean;
 }
 
-export function Card({ children, className, hover, glass }: CardProps) {
+export function Card({ children, className, hover, glass = true }: CardProps) {
   return (
     <div className={cn(
-      "rounded-xl border border-border",
+      "rounded-xl border border-border-glass",
       glass ? "glass" : "bg-elevated",
-      hover && "transition-colors duration-150 hover:border-border-hover hover:bg-overlay cursor-pointer",
+      hover && "glass-interactive cursor-pointer",
       className
     )}>
       {children}
@@ -33,7 +33,7 @@ interface CardHeaderProps {
 
 export function CardHeader({ children, className, action }: CardHeaderProps) {
   return (
-    <div className={cn("flex items-center justify-between px-5 py-4 border-b border-border", className)}>
+    <div className={cn("flex items-center justify-between px-5 py-4 border-b border-border-glass", className)}>
       <div>{children}</div>
       {action}
     </div>
@@ -82,7 +82,7 @@ export function StatCard({ label, value, change, icon, className }: StatCardProp
     <motion.div
       variants={staggerItem}
       whileHover={{ y: -2, transition: { duration: 0.15 } }}
-      className={cn("rounded-xl border border-border bg-elevated p-4", className)}
+      className={cn("rounded-xl border border-border-glass glass p-4", className)}
     >
       <div className="flex items-start justify-between">
         <div className="space-y-1">

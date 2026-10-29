@@ -12,12 +12,12 @@ interface BadgeProps {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  default: 'bg-overlay text-foreground-secondary border-border',
+  default: 'glass-subtle text-foreground-secondary border-border-glass',
   success: 'bg-success-subtle text-success border-success/20',
   warning: 'bg-warning-subtle text-warning border-warning/20',
   danger: 'bg-danger-subtle text-danger border-danger/20',
   info: 'bg-info-subtle text-info border-info/20',
-  outline: 'bg-transparent text-foreground-secondary border-border',
+  outline: 'bg-transparent text-foreground-secondary border-border-glass',
 };
 
 function getStatusVariant(status: string): BadgeVariant {

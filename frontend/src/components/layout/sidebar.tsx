@@ -130,12 +130,12 @@ export default function Sidebar({ open, onClose, onSearchOpen }: {
       />
 
       <aside className={cn(
-        "fixed top-0 left-0 z-50 h-full w-60 bg-surface border-r border-border flex flex-col",
+        "fixed top-0 left-0 z-50 h-full w-60 glass-strong border-r border-border-glass flex flex-col",
         "lg:translate-x-0 transition-transform duration-200 ease-out",
         open ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Logo */}
-        <div className="h-14 flex items-center justify-between px-4 border-b border-border flex-shrink-0">
+        <div className="h-14 flex items-center justify-between px-4 border-b border-border-glass flex-shrink-0">
           <Link href={role === 'OWNER' ? '/admin' : role === 'TECHNICIAN' ? '/technician' : '/dashboard'} className="flex items-center gap-2.5" onClick={onClose}>
             <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
               <span className="text-white font-bold text-xs">N</span>
@@ -153,7 +153,7 @@ export default function Sidebar({ open, onClose, onSearchOpen }: {
         <div className="px-3 pt-3 flex-shrink-0">
           <button
             onClick={onSearchOpen}
-            className="w-full flex items-center gap-2 px-3 h-8 bg-elevated border border-border rounded-lg text-xs text-muted hover:border-border-hover transition-colors"
+            className="w-full flex items-center gap-2 px-3 h-8 glass-subtle border border-border-glass rounded-lg text-xs text-muted hover:border-border-glass-hover transition-colors"
           >
             <Search className="w-3.5 h-3.5" />
             <span className="flex-1 text-left">Search...</span>

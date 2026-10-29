@@ -82,7 +82,7 @@ export default function Header({ onMenuClick, onSearchOpen }: {
   };
 
   return (
-    <header className="sticky top-0 z-30 h-14 glass-strong border-b border-border flex items-center px-4 lg:px-6 gap-3">
+    <header className="sticky top-0 z-30 h-14 glass-strong border-b border-border-glass flex items-center px-4 lg:px-6 gap-3">
       <button onClick={onMenuClick} className="lg:hidden p-1.5 rounded-lg hover:bg-overlay text-muted">
         <Menu className="w-5 h-5" />
       </button>
@@ -93,7 +93,7 @@ export default function Header({ onMenuClick, onSearchOpen }: {
         {/* Search */}
         <button
           onClick={onSearchOpen}
-          className="hidden sm:flex items-center gap-2 px-3 h-8 rounded-lg border border-border hover:border-border-hover text-muted text-xs transition-colors"
+          className="hidden sm:flex items-center gap-2 px-3 h-8 rounded-lg border border-border-glass glass-subtle hover:border-border-glass-hover text-muted text-xs transition-colors"
         >
           <Search className="w-3.5 h-3.5" />
           <span className="text-muted">Search</span>
@@ -114,8 +114,8 @@ export default function Header({ onMenuClick, onSearchOpen }: {
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 top-full mt-2 w-80 bg-elevated border border-border rounded-xl shadow-2xl animate-fade-in overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+            <div className="absolute right-0 top-full mt-2 w-80 glass-strong rounded-xl shadow-2xl animate-fade-in overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border-glass">
                 <h3 className="text-sm font-semibold">Notifications</h3>
                 {unreadCount > 0 && (
                   <button onClick={markAllRead} className="text-xs text-primary hover:text-primary-hover">
@@ -132,7 +132,7 @@ export default function Header({ onMenuClick, onSearchOpen }: {
                       key={n.id}
                       onClick={() => markAsRead(n.id)}
                       className={cn(
-                        "px-4 py-3 border-b border-border last:border-0 cursor-pointer hover:bg-overlay transition-colors",
+                        "px-4 py-3 border-b border-border-glass last:border-0 cursor-pointer hover:bg-overlay transition-colors",
                         !n.isRead && "bg-primary-subtle/30"
                       )}
                     >
@@ -172,8 +172,8 @@ export default function Header({ onMenuClick, onSearchOpen }: {
           </button>
 
           {showUserMenu && (
-            <div className="absolute right-0 top-full mt-2 w-52 bg-elevated border border-border rounded-xl shadow-2xl animate-fade-in overflow-hidden">
-              <div className="px-4 py-3 border-b border-border">
+            <div className="absolute right-0 top-full mt-2 w-52 glass-strong rounded-xl shadow-2xl animate-fade-in overflow-hidden">
+              <div className="px-4 py-3 border-b border-border-glass">
                 <p className="text-sm font-medium">{user?.name}</p>
                 <p className="text-xs text-muted">{user?.email}</p>
               </div>

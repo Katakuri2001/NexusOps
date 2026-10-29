@@ -66,7 +66,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               exit={{ opacity: 0, x: 40, scale: 0.95, transition: { duration: 0.15 } }}
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
               className={cn(
-                "pointer-events-auto flex items-center gap-3 px-4 py-3 bg-elevated border border-border border-l-4 rounded-xl shadow-xl max-w-sm",
+                "pointer-events-auto flex items-center gap-3 px-4 py-3 glass-strong rounded-xl shadow-xl max-w-sm",
                 borderColors[toast.type]
               )}
             >

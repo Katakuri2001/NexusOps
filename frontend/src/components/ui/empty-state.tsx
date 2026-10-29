@@ -21,7 +21,7 @@ export function EmptyState({ icon, title, description, action, className }: Empt
       transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
       className={cn("flex flex-col items-center justify-center py-20 text-center", className)}
     >
-      <div className="p-4 rounded-2xl bg-overlay border border-border mb-4">
+      <div className="p-4 rounded-2xl glass mb-4">
         {icon || <Inbox className="w-8 h-8 text-muted" />}
       </div>
       <h3 className="text-sm font-semibold mb-1">{title}</h3>

@@ -19,12 +19,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           className={cn(
-            "w-full h-9 px-3 bg-elevated border rounded-lg text-sm text-foreground placeholder:text-muted",
+            "w-full h-9 px-3 glass-subtle border rounded-lg text-sm text-foreground placeholder:text-muted",
             "transition-colors duration-150",
             "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50",
             error
               ? "border-danger focus:ring-danger/30 focus:border-danger/50"
-              : "border-border hover:border-border-hover",
+              : "border-border-glass hover:border-border-glass-hover",
             className
           )}
           {...props}
@@ -55,12 +55,12 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         <select
           ref={ref}
           className={cn(
-            "w-full h-9 px-3 bg-elevated border rounded-lg text-sm text-foreground",
+            "w-full h-9 px-3 glass-subtle border rounded-lg text-sm text-foreground",
             "transition-colors duration-150 appearance-none",
             "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50",
             error
               ? "border-danger focus:ring-danger/30"
-              : "border-border hover:border-border-hover",
+              : "border-border-glass hover:border-border-glass-hover",
             className
           )}
           {...props}

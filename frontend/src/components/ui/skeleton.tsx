@@ -11,7 +11,7 @@ export function Skeleton({ className }: SkeletonProps) {
 
 export function StatCardSkeleton() {
   return (
-    <div className="rounded-xl border border-border bg-elevated p-4 space-y-3">
+    <div className="rounded-xl glass p-4 space-y-3">
       <div className="flex items-start justify-between">
         <div className="space-y-2 flex-1">
           <Skeleton className="h-3 w-20" />
@@ -25,7 +25,7 @@ export function StatCardSkeleton() {
 
 export function CardSkeleton({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="rounded-xl border border-border bg-elevated p-5 space-y-4">
+    <div className="rounded-xl glass p-5 space-y-4">
       <Skeleton className="h-5 w-32" />
       <div className="space-y-3">
         {Array.from({ length: rows }).map((_, i) => (
@@ -44,8 +44,8 @@ export function CardSkeleton({ rows = 3 }: { rows?: number }) {
 
 export function TableSkeleton({ rows = 5, cols = 4 }: { rows?: number; cols?: number }) {
   return (
-    <div className="rounded-xl border border-border bg-elevated overflow-hidden">
-      <div className="px-5 py-3 border-b border-border">
+    <div className="rounded-xl glass overflow-hidden">
+      <div className="px-5 py-3 border-b border-border-glass">
         <Skeleton className="h-4 w-24" />
       </div>
       <div className="divide-y divide-border">

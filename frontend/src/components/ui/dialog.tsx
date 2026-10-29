@@ -31,7 +31,7 @@ export function Dialog({ open, onClose, children, className }: DialogProps) {
             exit={{ opacity: 0, scale: 0.97, y: 4 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             className={cn(
-              "relative w-full max-w-lg bg-elevated border border-border rounded-2xl shadow-2xl overflow-hidden",
+              "relative w-full max-w-lg glass-strong rounded-2xl shadow-2xl overflow-hidden",
               className
             )}
           >
