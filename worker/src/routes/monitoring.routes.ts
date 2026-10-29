@@ -2,8 +2,7 @@ import { Hono } from 'hono';
 import { Env, AuthContext } from '../types';
 import { authenticate, authorize } from '../middleware/auth';
 import { camelCaseKeys } from '../db/transform';
-import { runCheck, getRecentChecks, computeHealth, MonitorLike } from '../services/monitoring.service';
-import { openIncidentIfNeeded, resolveIncident } from '../services/incident.service';
+import { runCheck, getRecentChecks, computeHealth, MonitorLike, handleCheckOutcome } from '../services/monitoring.service';
 
 const monitoring = new Hono<{ Bindings: Env; Variables: { auth: AuthContext } }>();
 
@@ -123,18 +122,7 @@ monitoring.post('/monitors/:id/checks', authorize('OWNER'), async (c) => {
   };
 
   const result = await runCheck(c.env.NEXUS_OPS, monitorLike);
-
-  if (!result.success) {
-    await openIncidentIfNeeded(
-      c.env.NEXUS_OPS,
-      monitor.id,
-      monitor.website_id,
-      `Website down: ${monitor.name}`,
-      'MEDIUM',
-      result.checkedAt
-    );
-  }
-
+  await handleCheckOutcome(c.env.NEXUS_OPS, monitorLike, result);
   return c.json(result, result.success ? 200 : 207);
 });
 

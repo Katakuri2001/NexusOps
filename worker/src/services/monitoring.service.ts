@@ -1,4 +1,5 @@
 import { Env } from '../types';
+import { openIncidentIfNeeded, resolveIncident } from './incident.service';
 
 export type HealthState = 'UP' | 'DOWN' | 'DEGRADED' | 'PAUSED' | 'UNKNOWN';
 
@@ -191,4 +192,44 @@ export function computeHealth(monitor: MonitorLike, checks: CheckResult[], now: 
     return 'DEGRADED';
   }
   return 'UP';
+}
+
+export async function handleCheckOutcome(db: D1Database, monitor: MonitorLike, result: CheckResult): Promise<void> {
+  const incident = await openIncidentIfNeeded(db, monitor.id, monitor.websiteId, `Website down: ${monitor.name}`, 'MEDIUM', result.checkedAt);
+
+  const writeActivity = async (action: string, entityId: string, metadata: Record<string, unknown>) => {
+    await db
+      .prepare(`INSERT INTO activity_logs (id, user_id, action, entity, entity_id, metadata, ip_address, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(crypto.randomUUID(), null, action, 'Incident', entityId, JSON.stringify(metadata), null, new Date().toISOString())
+      .run();
+  };
+
+  const writeNotification = async (type: string, title: string, message: string) => {
+    const website = await db.prepare(`SELECT customer_id FROM websites WHERE id = ?`).bind(monitor.websiteId).first();
+    const customerId = (website as any)?.customer_id ?? null;
+    if (!customerId) return;
+    await db
+      .prepare(
+        `INSERT INTO notifications (id, website_id, customer_id, title, message, type, priority, is_read, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`
+      )
+      .bind(crypto.randomUUID(), monitor.websiteId, customerId, title, message, type, 'IMPORTANT', new Date().toISOString(), new Date().toISOString())
+      .run();
+  };
+
+  if (!result.success) {
+    if (incident) {
+      await writeNotification('WARNING', `Website down: ${monitor.name}`, `Automated monitoring detected a failed check for ${monitor.name} (${monitor.url}).`);
+      await writeActivity('MONITOR_ALERT', incident.id, { monitorId: monitor.id, websiteId: monitor.websiteId, incidentId: incident.id, outcome: 'failed' });
+    }
+    return;
+  }
+
+  if (incident) {
+    const resolved = await resolveIncident(db, incident.id, null, 'Recovered');
+    if (resolved) {
+      await writeNotification('INFORMATION', `Website recovered: ${monitor.name}`, `Automated monitoring detected recovery for ${monitor.name} (${monitor.url}).`);
+      await writeActivity('MONITOR_RESOLVED', incident.id, { monitorId: monitor.id, websiteId: monitor.websiteId, incidentId: incident.id, outcome: 'recovered' });
+    }
+  }
 }

@@ -12,8 +12,7 @@ import dashboardRoutes from './routes/dashboard.routes';
 import chargeRoutes from './routes/charge.routes';
 import billingRoutes from './routes/billing.routes';
 import monitoringRoutes from './routes/monitoring.routes';
-import { runCheck, getRecentChecks, MonitorLike } from './services/monitoring.service';
-import { openIncidentIfNeeded, resolveIncident } from './services/incident.service';
+import { runCheck, getRecentChecks, MonitorLike, handleCheckOutcome } from './services/monitoring.service';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -83,14 +82,7 @@ async function runDueChecks(env: Env): Promise<void> {
         sslExpiryThresholdDays: Number(m.ssl_expiry_threshold_days || 30),
       };
       const result = await runCheck(env.NEXUS_OPS, monitorLike);
-      if (!result.success) {
-        await openIncidentIfNeeded(env.NEXUS_OPS, m.id, m.website_id, `Website down: ${m.name}`, 'MEDIUM', result.checkedAt);
-      } else {
-        const open = (await env.NEXUS_OPS.prepare(`SELECT id FROM incidents WHERE monitor_id = ? AND status = 'OPEN'`).bind(m.id).first()) as { id: string } | null;
-        if (open) {
-          await resolveIncident(env.NEXUS_OPS, open.id, null, 'Recovered');
-        }
-      }
+      await handleCheckOutcome(env.NEXUS_OPS, monitorLike, result);
     } finally {
       runningChecks.delete(m.id);
     }
