@@ -2,6 +2,7 @@
 
 > Companion to `CAPABILITIES.md`, `UPGRADE_ROADMAP.md`, and the design spec/plan under `docs/superpowers/`.  
 > The **Website Monitoring Engine & Incident Management** phase (Tasks 1–8) is complete.  
+> **Cloudflare deployment (worker + D1 migration + frontend) is complete.**  
 > This document tracks what remains, in priority order.
 
 ---
@@ -19,6 +20,8 @@
 - **Automated website monitoring** (Cloudflare Worker cron + D1, SSRF-safe checks, observed health states)
 - **Incident lifecycle** (open/acknowledge/resolve/reopen, dedup, timeline)
 - **Monitoring notifications/activity wiring** (incident open/recovery)
+- **Cloudflare deployment** — Worker (Hono + D1) deployed with cron trigger; D1 migrated (nullable customer_id + monitoring tables, all data preserved); frontend (Next.js via OpenNext) deployed to Cloudflare Workers
+- **Production URLs**: Worker `https://nexusops.kaungsethmue2001.workers.dev`, Frontend `https://nexusops-frontend.kaungsethmue2001.workers.dev`
 - **Dashboard stats extension** (monitors/incidents counts)
 - **Basic monitoring UI** (admin dashboard stat cards, website detail Monitoring tab)
 
