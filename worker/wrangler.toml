@@ -11,6 +11,6 @@ database_name = "nexusops"
 database_id = "d7f86c89-708f-4709-99d8-b1f7cec26295"
 
 [vars]
-FRONTEND_URL = "https://nexusops.pages.dev"
+FRONTEND_URL = "https://nexusops-frontend.kaungsethmue2001.workers.dev,https://nexusops.pages.dev"
 JWT_ACCESS_EXPIRY = "15m"
 JWT_REFRESH_EXPIRY = "7d"
