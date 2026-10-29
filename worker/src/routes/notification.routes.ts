@@ -60,9 +60,13 @@ notifications.patch('/:id/read', async (c) => {
 
 notifications.post('/read-all', async (c) => {
   const auth = c.get('auth') as AuthContext;
-  const customer = await c.env.NEXUS_OPS.prepare('SELECT id FROM customers WHERE user_id = ?').bind(auth.userId).first();
-  if (customer) {
-    await c.env.NEXUS_OPS.prepare('UPDATE notifications SET is_read = 1, updated_at = datetime("now") WHERE customer_id = ?').bind(customer.id).run();
+  if (auth.role === 'OWNER') {
+    await c.env.NEXUS_OPS.prepare('UPDATE notifications SET is_read = 1, updated_at = datetime("now") WHERE is_read = 0').run();
+  } else {
+    const customer = await c.env.NEXUS_OPS.prepare('SELECT id FROM customers WHERE user_id = ?').bind(auth.userId).first();
+    if (customer) {
+      await c.env.NEXUS_OPS.prepare('UPDATE notifications SET is_read = 1, updated_at = datetime("now") WHERE customer_id = ?').bind(customer.id).run();
+    }
   }
   return c.json({ message: 'All notifications marked as read' });
 });

@@ -95,7 +95,9 @@ router.post('/read-all', async (req: any, res: Response) => {
   try {
     const { role, userId } = req.user!;
 
-    if (role === 'CUSTOMER') {
+    if (role === 'OWNER') {
+      await prisma.notification.updateMany({ where: { isRead: false }, data: { isRead: true } });
+    } else if (role === 'CUSTOMER') {
       const customer = await prisma.customer.findUnique({ where: { userId } });
       if (!customer) {
         res.status(404).json({ error: 'Customer not found' });
