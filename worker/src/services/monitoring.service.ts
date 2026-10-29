@@ -216,6 +216,16 @@ export async function handleCheckOutcome(db: D1Database, monitor: MonitorLike, r
   };
 
   if (!result.success) {
+    const recent = await getRecentChecks(db, monitor.id, monitor.failureThreshold);
+    let consecutiveFailures = 0;
+    for (const c of recent) {
+      if (!c.success) consecutiveFailures++;
+      else break;
+    }
+    if (consecutiveFailures < monitor.failureThreshold) {
+      // Below the configured failure threshold — no incident yet.
+      return;
+    }
     const incident = await openIncidentIfNeeded(db, monitor.id, monitor.websiteId, `Website down: ${monitor.name}`, 'MEDIUM', result.checkedAt);
     if (incident) {
       await writeNotification('WARNING', `Website down: ${monitor.name}`, `Automated monitoring detected a failed check for ${monitor.name} (${monitor.url}).`);
