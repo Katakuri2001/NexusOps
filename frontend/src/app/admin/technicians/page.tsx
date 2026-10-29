@@ -3,30 +3,44 @@
 import React, { useEffect, useState } from 'react';
 import AppShell from '@/components/layout/app-shell';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { EmptyState, PageHeader } from '@/components/ui/empty-state';
 import { api } from '@/services/api';
 import { useRouter } from 'next/navigation';
-import { Wrench } from 'lucide-react';
+import { Wrench, Plus } from 'lucide-react';
 import Link from 'next/link';
+import CreateTechnicianDialog from '@/components/create-technician-dialog';
 
 export default function AdminTechnicians() {
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
+  const fetchTechnicians = () => {
+    setLoading(true);
     api.getTechnicians().then(setTechnicians).catch(() => {}).finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { fetchTechnicians(); }, []);
 
   return (
     <AppShell>
       <div className="space-y-5 animate-fade-in">
-        <PageHeader title="Technicians" description="Manage technician access and assignments" />
+        <PageHeader
+          title="Technicians"
+          description="Manage technician access and assignments"
+          action={
+            <Button icon={<Plus className="w-4 h-4" />} size="sm" onClick={() => setShowCreate(true)}>
+              Add Technician
+            </Button>
+          }
+        />
 
         {loading ? (
           <div className="flex items-center justify-center py-32"><div className="w-6 h-6 border-2 border-border border-t-primary rounded-full animate-spin" /></div>
         ) : technicians.length === 0 ? (
-          <EmptyState icon={<Wrench className="w-8 h-8 text-muted" />} title="No technicians yet" description="Technicians will appear here once created." />
+          <EmptyState icon={<Wrench className="w-8 h-8 text-muted" />} title="No technicians yet" description="Create your first technician to get started." />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {technicians.map((t: any) => (
@@ -64,6 +78,7 @@ export default function AdminTechnicians() {
           </div>
         )}
       </div>
+      <CreateTechnicianDialog open={showCreate} onClose={() => setShowCreate(false)} onCreated={fetchTechnicians} />
     </AppShell>
   );
 }
