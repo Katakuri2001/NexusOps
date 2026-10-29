@@ -113,7 +113,7 @@ Open `http://localhost:3000` and use:
 
 ## Known Limitations
 
-- Manual status updates only (no automated monitoring yet)
+- Automated monitoring now runs via Cloudflare Worker cron (every 5 min) + D1
 - No email/SMS notifications (in-app only)
 - No file uploads
 - No real-time WebSocket updates

@@ -98,7 +98,7 @@ These are the **most valuable gaps** to close next, aligned with the upgrade roa
 
 | # | Gap | Impact | Related Roadmap Item |
 |---|-----|--------|----------------------|
-| 1 | **No automated uptime / health monitoring** | Manual status only — the core promise | Automated Website Monitoring (#17) |
+| 1 | **Automated uptime / health monitoring** | ✅ **NEW** — Cloudflare Worker cron (every 5 min) + D1, SSRF-safe checks, observed health states | Automated Website Monitoring (#17) — done |
 | 2 | **No external notification delivery** (email/SMS) | In-app only | Email/SMS (#18) |
 | 3 | **No automated invoicing / payments** | Manual billing tracking | Automated Billing (#19) |
 | 4 | **No real-time updates** (WebSocket) | Users refresh manually | Real-Time (#15) |
@@ -141,7 +141,7 @@ These are the **most valuable gaps** to close next, aligned with the upgrade roa
 | Notifications | ✅ Partial | In-app only |
 | Activity logs | ✅ Complete | |
 | Dashboard stats | ✅ Complete | |
-| Automated monitoring | ❌ Missing | Top priority |
+| Automated monitoring | ✅ **NEW** | HTTP/HTTPS checks via Worker cron + D1; incident lifecycle wired |
 | Email/SMS delivery | ❌ Missing | Next priority |
 | Real-time updates | ❌ Missing | |
 | Automated billing/invoicing | ❌ Missing | |
@@ -175,4 +175,4 @@ Based on current capabilities + user pain points, the highest-value near-term im
 
 **NexusOps today** provides a solid, role-aware website operations & client portal: website CRUD with status/timeline, customer & technician management, service/billing tracking, maintenance, notifications, activity logs, and dashboard stats — **plus the new owner-less website capability**.
 
-**The biggest remaining capability gaps** for a truly "complete" improvement are **automated monitoring, external notification delivery, real-time updates, and automated billing**.
+**The biggest remaining capability gaps** for a truly "complete" improvement are **external notification delivery (email/SMS), real-time updates, and automated billing**.
