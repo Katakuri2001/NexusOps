@@ -15,19 +15,33 @@ technicians.get('/', async (c) => {
            u.id as user_id, u.email, u.name, u.role, u.is_active
     FROM technicians t JOIN users u ON t.user_id = u.id ORDER BY t.created_at DESC
   `).all();
-  
-  const techniciansWithAssignments = await Promise.all(
-    result.results.map(async (tech) => {
+
+  const technicians = await Promise.all(
+    (result.results || []).map(async (tech: any) => {
       const assignments = await c.env.NEXUS_OPS.prepare(`
         SELECT w.id, w.name, w.domain FROM websites w
         JOIN technician_website_assignments twa ON w.id = twa.website_id
         WHERE twa.technician_id = ?
       `).bind(tech.id).all();
-      return { ...tech, assignments: assignments.results };
+      return {
+        id: tech.id,
+        specialization: tech.specialization,
+        createdAt: tech.created_at,
+        updatedAt: tech.updated_at,
+        user: {
+          id: tech.user_id,
+          email: tech.email,
+          name: tech.name,
+          role: tech.role,
+          isActive: tech.is_active === 1 || tech.is_active === true,
+          createdAt: tech.created_at,
+        },
+        assignments: (assignments.results || []).map((a: any) => ({ website: { id: a.id, name: a.name, domain: a.domain } })),
+      };
     })
   );
-  
-  return c.json(camelCaseKeys(techniciansWithAssignments));
+
+  return c.json(technicians);
 });
 
 technicians.get('/:id', async (c) => {
@@ -37,19 +51,34 @@ technicians.get('/:id', async (c) => {
     FROM technicians t JOIN users u ON t.user_id = u.id WHERE t.id = ?
   `).bind(c.req.param('id')).first();
   if (!result) return c.json({ error: 'Technician not found' }, 404);
-  
+
   const assignments = await c.env.NEXUS_OPS.prepare(`
     SELECT w.id, w.name, w.domain FROM websites w
     JOIN technician_website_assignments twa ON w.id = twa.website_id
     WHERE twa.technician_id = ?
   `).bind(c.req.param('id')).all();
-  
+
   const permissions = await c.env.NEXUS_OPS.prepare(`
     SELECT website_id, permission FROM technician_permissions
     WHERE technician_id = ?
   `).bind(c.req.param('id')).all();
-  
-  return c.json(camelCaseKeys({ ...result, assignments: assignments.results, permissions: permissions.results }));
+
+  return c.json({
+    id: result.id,
+    specialization: result.specialization,
+    createdAt: result.created_at,
+    updatedAt: result.updated_at,
+    user: {
+      id: result.user_id,
+      email: result.email,
+      name: result.name,
+      role: result.role,
+      isActive: result.is_active === 1 || result.is_active === true,
+      createdAt: result.created_at,
+    },
+    assignments: (assignments.results || []).map((a: any) => ({ website: { id: a.id, name: a.name, domain: a.domain } })),
+    permissions: camelCaseKeys(permissions.results || []),
+  });
 });
 
 technicians.post('/', async (c) => {

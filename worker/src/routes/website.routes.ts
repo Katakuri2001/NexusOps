@@ -51,7 +51,12 @@ websites.get('/', async (c) => {
     result = assignments;
   }
 
-  return c.json(camelCaseKeys(result.results));
+  const rows = (result.results || []).map((w: any) => ({
+    ...w,
+    customer: w.customer_name ? { company: w.customer_company, user: { name: w.customer_name } } : (w.customer ?? null),
+    hosting: w.hosting_due_date ? { cost: w.hosting_cost, dueDate: w.hosting_due_date, status: w.hosting_status, provider: w.hosting_provider } : (w.hosting_cost != null ? { cost: w.hosting_cost, provider: w.hosting_provider, status: w.hosting_status } : (w.hosting ?? null)),
+  }));
+  return c.json(camelCaseKeys(rows));
 });
 
 // GET /:id - Get website by ID
@@ -78,7 +83,7 @@ websites.get('/:id', async (c) => {
     c.env.NEXUS_OPS.prepare('SELECT * FROM plans WHERE website_id = ?').bind(c.req.param('id')).first(),
   ]);
 
-  return c.json(camelCaseKeys({ ...result, hosting, database, server, plan }));
+  return c.json(camelCaseKeys({ ...result, customer: result?.customer_name ? { company: result.customer_company, user: { name: result.customer_name, email: result.customer_email } } : null, hosting, database, server, plan }));
 });
 
 // POST / - Create website (OWNER only)

@@ -12,12 +12,35 @@ customers.use('/*', authorize('OWNER'));
 customers.get('/', async (c) => {
   const result = await c.env.NEXUS_OPS.prepare(`
     SELECT c.id, c.phone, c.company, c.address, c.created_at, c.updated_at,
-           u.id as user_id, u.email, u.name, u.role, u.is_active,
-           (SELECT COUNT(*) FROM websites WHERE customer_id = c.id) as websites_count
+           u.id as user_id, u.email, u.name, u.role, u.is_active
     FROM customers c JOIN users u ON c.user_id = u.id
     ORDER BY c.created_at DESC
   `).all();
-  return c.json(camelCaseKeys(result.results));
+
+  const customers = await Promise.all(
+    (result.results || []).map(async (cu: any) => {
+      const ws = await c.env.NEXUS_OPS.prepare('SELECT id FROM websites WHERE customer_id = ?').bind(cu.id).all();
+      return {
+        id: cu.id,
+        phone: cu.phone,
+        company: cu.company,
+        address: cu.address,
+        createdAt: cu.created_at,
+        updatedAt: cu.updated_at,
+        user: {
+          id: cu.user_id,
+          email: cu.email,
+          name: cu.name,
+          role: cu.role,
+          isActive: cu.is_active === 1 || cu.is_active === true,
+          createdAt: cu.created_at,
+        },
+        websites: (ws.results || []).map((w: any) => ({ id: w.id })),
+      };
+    })
+  );
+
+  return c.json(customers);
 });
 
 customers.get('/:id', async (c) => {
@@ -28,7 +51,23 @@ customers.get('/:id', async (c) => {
   `).bind(c.req.param('id')).first();
   if (!result) return c.json({ error: 'Customer not found' }, 404);
   const websites = await c.env.NEXUS_OPS.prepare('SELECT * FROM websites WHERE customer_id = ?').bind(c.req.param('id')).all();
-  return c.json(camelCaseKeys({ ...result, websites: websites.results }));
+  return c.json({
+    id: result.id,
+    phone: result.phone,
+    company: result.company,
+    address: result.address,
+    createdAt: result.created_at,
+    updatedAt: result.updated_at,
+    user: {
+      id: result.user_id,
+      email: result.email,
+      name: result.name,
+      role: result.role,
+      isActive: result.is_active === 1 || result.is_active === true,
+      createdAt: result.created_at,
+    },
+    websites: camelCaseKeys(websites.results || []),
+  });
 });
 
 customers.post('/', async (c) => {
