@@ -195,8 +195,6 @@ export function computeHealth(monitor: MonitorLike, checks: CheckResult[], now: 
 }
 
 export async function handleCheckOutcome(db: D1Database, monitor: MonitorLike, result: CheckResult): Promise<void> {
-  const incident = await openIncidentIfNeeded(db, monitor.id, monitor.websiteId, `Website down: ${monitor.name}`, 'MEDIUM', result.checkedAt);
-
   const writeActivity = async (action: string, entityId: string, metadata: Record<string, unknown>) => {
     await db
       .prepare(`INSERT INTO activity_logs (id, user_id, action, entity, entity_id, metadata, ip_address, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
@@ -218,6 +216,7 @@ export async function handleCheckOutcome(db: D1Database, monitor: MonitorLike, r
   };
 
   if (!result.success) {
+    const incident = await openIncidentIfNeeded(db, monitor.id, monitor.websiteId, `Website down: ${monitor.name}`, 'MEDIUM', result.checkedAt);
     if (incident) {
       await writeNotification('WARNING', `Website down: ${monitor.name}`, `Automated monitoring detected a failed check for ${monitor.name} (${monitor.url}).`);
       await writeActivity('MONITOR_ALERT', incident.id, { monitorId: monitor.id, websiteId: monitor.websiteId, incidentId: incident.id, outcome: 'failed' });
@@ -225,11 +224,12 @@ export async function handleCheckOutcome(db: D1Database, monitor: MonitorLike, r
     return;
   }
 
-  if (incident) {
-    const resolved = await resolveIncident(db, incident.id, null, 'Recovered');
+  const open = (await db.prepare(`SELECT id FROM incidents WHERE monitor_id = ? AND status = 'OPEN'`).bind(monitor.id).first()) as { id: string } | null;
+  if (open) {
+    const resolved = await resolveIncident(db, open.id, null, 'Recovered');
     if (resolved) {
       await writeNotification('INFORMATION', `Website recovered: ${monitor.name}`, `Automated monitoring detected recovery for ${monitor.name} (${monitor.url}).`);
-      await writeActivity('MONITOR_RESOLVED', incident.id, { monitorId: monitor.id, websiteId: monitor.websiteId, incidentId: incident.id, outcome: 'recovered' });
+      await writeActivity('MONITOR_RESOLVED', open.id, { monitorId: monitor.id, websiteId: monitor.websiteId, incidentId: open.id, outcome: 'recovered' });
     }
   }
 }
