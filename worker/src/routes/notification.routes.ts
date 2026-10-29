@@ -19,6 +19,12 @@ notifications.get('/', async (c) => {
       LEFT JOIN users u ON c.user_id = u.id
       ORDER BY n.created_at DESC LIMIT 50
     `).all();
+    const notifications = (result.results || []).map((n: any) => ({
+      ...n,
+      website: n.website_name ? { name: n.website_name, id: n.website_id, domain: null } : null,
+      customer: n.customer_name ? { user: { name: n.customer_name } } : null,
+    }));
+    return c.json(camelCaseKeys(notifications));
   } else {
     const customer = await c.env.NEXUS_OPS.prepare('SELECT id FROM customers WHERE user_id = ?').bind(auth.userId).first();
     if (!customer) return c.json([]);
@@ -29,8 +35,12 @@ notifications.get('/', async (c) => {
       WHERE n.customer_id = ?
       ORDER BY n.created_at DESC
     `).bind(customer.id).all();
+    const notifications = (result.results || []).map((n: any) => ({
+      ...n,
+      website: n.website_name ? { name: n.website_name, id: n.website_id } : null,
+    }));
+    return c.json(camelCaseKeys(notifications));
   }
-  return c.json(camelCaseKeys(result.results));
 });
 
 notifications.get('/unread-count', async (c) => {
