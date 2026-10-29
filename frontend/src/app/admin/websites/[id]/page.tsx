@@ -8,7 +8,7 @@ import { StatusBadge } from '@/components/ui/badge';
 import { PageSkeleton } from '@/components/ui/skeleton';
 import { api } from '@/services/api';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Globe, Server, Database, HardDrive, DollarSign, Wrench, Clock, Plus, Pencil, Bell } from 'lucide-react';
+import { ArrowLeft, Globe, Server, Database, HardDrive, DollarSign, Wrench, Clock, Plus, Pencil, Bell, Activity } from 'lucide-react';
 import { formatDate, formatCurrency, getDueDateLabel, getUrgencyColor, formatRelativeTime } from '@/lib/utils';
 import ServiceEditorDialog from '@/components/service-editor-dialog';
 import AddChargeDialog from '@/components/add-charge-dialog';
@@ -16,7 +16,7 @@ import AddMaintenanceDialog from '@/components/add-maintenance-dialog';
 import AddTimelineEventDialog from '@/components/add-timeline-event-dialog';
 import SendNotificationDialog from '@/components/send-notification-dialog';
 
-type Tab = 'overview' | 'services' | 'billing' | 'maintenance' | 'timeline' | 'notify';
+type Tab = 'overview' | 'services' | 'billing' | 'maintenance' | 'timeline' | 'notify' | 'monitoring';
 
 export default function AdminWebsiteDetail() {
   const params = useParams();
@@ -32,6 +32,32 @@ export default function AdminWebsiteDetail() {
   const [maintenanceDialog, setMaintenanceDialog] = useState(false);
   const [timelineDialog, setTimelineDialog] = useState(false);
   const [notificationDialog, setNotificationDialog] = useState(false);
+  const [monitors, setMonitors] = useState<any[]>([]);
+  const [monitorChecks, setMonitorChecks] = useState<any[]>([]);
+  const [selectedMonitorId, setSelectedMonitorId] = useState<string | null>(null);
+  const [monitorLoading, setMonitorLoading] = useState(false);
+
+  const fetchMonitors = useCallback(async () => {
+    setMonitorLoading(true);
+    try {
+      const all = await api.getMonitors();
+      const mine = (all || []).filter((m: any) => m.websiteId === website?.id || m.website_id === website?.id);
+      setMonitors(mine);
+      if (mine.length > 0 && !selectedMonitorId) setSelectedMonitorId(mine[0].id);
+    } catch {} finally {
+      setMonitorLoading(false);
+    }
+  }, [website?.id, selectedMonitorId]);
+
+  const fetchMonitorChecks = useCallback(async (monitorId: string) => {
+    try {
+      const checks = await api.getMonitorChecks(monitorId);
+      setMonitorChecks(checks || []);
+    } catch {}
+  }, []);
+
+  useEffect(() => { if (tab === 'monitoring') fetchMonitors(); }, [tab, fetchMonitors]);
+  useEffect(() => { if (selectedMonitorId) fetchMonitorChecks(selectedMonitorId); }, [selectedMonitorId, fetchMonitorChecks]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -58,6 +84,7 @@ export default function AdminWebsiteDetail() {
     { id: 'maintenance', label: 'Maintenance', icon: Wrench },
     { id: 'timeline', label: 'Timeline', icon: Clock },
     { id: 'notify', label: 'Notify', icon: Bell },
+    { id: 'monitoring', label: 'Monitoring', icon: Activity },
   ];
 
   const services = [
@@ -385,6 +412,52 @@ export default function AdminWebsiteDetail() {
                 </CardContent>
               </Card>
             )}
+          </div>
+        )}
+        {tab === 'monitoring' && (
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle subtitle="Monitors for this website">Monitoring</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {monitorLoading ? (
+                  <p className="text-sm text-muted">Loading monitors...</p>
+                ) : monitors.length === 0 ? (
+                  <p className="text-sm text-muted">No monitors configured for this website yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {monitors.map((m: any) => (
+                      <div key={m.id} className="p-3 border border-border rounded-lg cursor-pointer" onClick={() => setSelectedMonitorId(m.id)}>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium">{m.name}</p>
+                            <p className="text-xs text-muted">{m.url}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <StatusBadge status={m.enabled ? 'OPERATIONAL' : 'SUSPENDED'} size="sm" />
+                            <Button size="sm" onClick={async () => { await api.runMonitorCheck(m.id); await fetchMonitorChecks(m.id); }}>Run check</Button>
+                          </div>
+                        </div>
+                        {monitorChecks.length > 0 && selectedMonitorId === m.id && (
+                          <div className="mt-3">
+                            <p className="text-xs text-muted uppercase tracking-wider mb-1">Recent checks</p>
+                            <div className="space-y-1">
+                              {monitorChecks.slice(0, 5).map((ch: any, i: number) => (
+                                <div key={i} className="flex items-center justify-between text-xs">
+                                  <span>{new Date(ch.checkedAt).toLocaleString()}</span>
+                                  <span className={ch.success ? 'text-success' : 'text-danger'}>{ch.success ? 'OK' : 'FAIL'} {ch.statusCode ? `(${ch.statusCode})` : ''} {ch.latencyMs != null ? `${ch.latencyMs}ms` : ''}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>

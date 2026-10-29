@@ -330,6 +330,31 @@ class ApiClient {
   async getDueDates() {
     return this.request<any>('/api/billing/due-dates');
   }
+
+  async getMonitors() {
+    return this.request<any[]>('/api/monitoring/monitors');
+  }
+
+  async createMonitor(data: any) {
+    return this.request<any>('/api/monitoring/monitors', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async runMonitorCheck(monitorId: string) {
+    return this.request<any>(`/api/monitoring/monitors/${monitorId}/checks`, {
+      method: 'POST',
+    });
+  }
+
+  async getMonitorChecks(monitorId: string) {
+    return this.request<any[]>(`/api/monitoring/monitors/${monitorId}/checks`);
+  }
+
+  async getMonitorIncidents(monitorId: string) {
+    return this.request<any[]>(`/api/monitoring/monitors/${monitorId}/incidents`);
+  }
 }
 
 export const api = new ApiClient();

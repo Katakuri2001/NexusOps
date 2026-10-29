@@ -92,11 +92,13 @@ export default function AdminDashboard() {
         </div>
 
         {/* Stats */}
-        <StaggerList className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StaggerList className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <StatCard label="Websites" value={stats?.totalWebsites || 0} icon={<Globe className="w-5 h-5" />} />
           <StatCard label="Customers" value={stats?.activeCustomers || 0} icon={<Users className="w-5 h-5" />} />
           <StatCard label="Attention" value={stats?.attentionWebsites || 0} icon={<AlertTriangle className="w-5 h-5" />} change={stats?.attentionWebsites > 0 ? { value: 'Needs review', type: 'down' } : undefined} />
           <StatCard label="Due Soon" value={stats?.upcomingDueDates || 0} icon={<Clock className="w-5 h-5" />} />
+          <StatCard label="Monitors" value={stats?.totalMonitors || 0} icon={<Activity className="w-5 h-5" />} />
+          <StatCard label="Open Incidents" value={stats?.openIncidents || 0} icon={<AlertTriangle className="w-5 h-5" />} change={stats?.openIncidents > 0 ? { value: 'Active', type: 'down' } : undefined} />
         </StaggerList>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

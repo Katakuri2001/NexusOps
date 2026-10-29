@@ -191,6 +191,58 @@ export interface ActivityLog {
   createdAt: string;
 }
 
+export type HealthState = 'UP' | 'DOWN' | 'DEGRADED' | 'PAUSED' | 'UNKNOWN';
+
+export interface Monitor {
+  id: string;
+  websiteId: string;
+  name: string;
+  url: string;
+  environment?: string;
+  enabled: boolean;
+  intervalSeconds: number;
+  timeoutMs: number;
+  expectedStatusCodes?: string;
+  latencyWarningMs?: number | null;
+  latencyCriticalMs?: number | null;
+  failureThreshold: number;
+  recoveryThreshold: number;
+  sslEnabled: boolean;
+  sslExpiryThresholdDays: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MonitorCheck {
+  id?: string;
+  monitorId: string;
+  websiteId: string;
+  checkedAt: string;
+  success: boolean;
+  statusCode?: number | null;
+  latencyMs?: number | null;
+  errorCategory?: string | null;
+  errorMessage?: string | null;
+  sslExpirationDate?: string | null;
+  sslValid: boolean;
+}
+
+export interface Incident {
+  id: string;
+  monitorId: string;
+  websiteId: string;
+  title: string;
+  severity: string;
+  status: string;
+  startedAt: string;
+  lastFailureAt?: string | null;
+  resolvedAt?: string | null;
+  resolvedBy?: string | null;
+  resolutionNotes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface DashboardStats {
   totalWebsites: number;
   operationalWebsites: number;
@@ -201,6 +253,10 @@ export interface DashboardStats {
   totalTechnicians: number;
   unreadNotifications: number;
   upcomingDueDates: number;
+  totalMonitors?: number;
+  activeMonitors?: number;
+  openIncidents?: number;
+  resolvedIncidents?: number;
 }
 
 export interface FinancialSummary {
