@@ -89,7 +89,7 @@ export default function ServiceEditorDialog({ open, onClose, websiteId, serviceT
           <div className="space-y-4">
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-foreground-secondary">{l.provider}</label>
-              <input value={form.provider} onChange={set('provider')} className="w-full h-10 px-3 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all placeholder:text-muted" placeholder={`e.g. ${serviceType === 'hosting' ? 'Cloudflare' : serviceType === 'database' ? 'PlanetScale' : 'AWS'}`} />
+              <input value={form.provider} onChange={set('provider')} required className="w-full h-10 px-3 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all placeholder:text-muted" placeholder={`e.g. ${serviceType === 'hosting' ? 'Cloudflare' : serviceType === 'database' ? 'PlanetScale' : 'AWS'}`} />
             </div>
             {l.showPlan && (
               <div className="space-y-1.5">
@@ -115,11 +115,11 @@ export default function ServiceEditorDialog({ open, onClose, websiteId, serviceT
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="block text-sm font-medium text-foreground-secondary">Start Date</label>
-                <input value={form.startDate} onChange={set('startDate')} type="date" className="w-full h-10 px-3 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all" />
+                <input value={form.startDate} onChange={set('startDate')} type="date" required className="w-full h-10 px-3 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all" />
               </div>
               <div className="space-y-1.5">
                 <label className="block text-sm font-medium text-foreground-secondary">Due Date</label>
-                <input value={form.dueDate} onChange={set('dueDate')} type="date" className="w-full h-10 px-3 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all" />
+                <input value={form.dueDate} onChange={set('dueDate')} type="date" required className="w-full h-10 px-3 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all" />
               </div>
             </div>
           </div>

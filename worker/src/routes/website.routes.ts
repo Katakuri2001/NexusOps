@@ -121,66 +121,98 @@ websites.delete('/:id', authorize('OWNER'), async (c) => {
 
 // PUT /:id/hosting
 websites.put('/:id/hosting', authorize('OWNER'), async (c) => {
-  const { provider, status, cost, billingCycle, startDate, dueDate, notes } = await c.req.json();
-  const existing = await c.env.NEXUS_OPS.prepare('SELECT id FROM hosting_services WHERE website_id = ?').bind(c.req.param('id')).first();
-  if (existing) {
-    await c.env.NEXUS_OPS.prepare(`UPDATE hosting_services SET provider=COALESCE(?,provider), status=COALESCE(?,status),
-      cost=COALESCE(?,cost), billing_cycle=COALESCE(?,billing_cycle), start_date=COALESCE(?,start_date),
-      due_date=COALESCE(?,due_date), notes=COALESCE(?,notes), updated_at=datetime('now') WHERE website_id=?`
-    ).bind(provider||null, status||null, cost, billingCycle||null, startDate||null, dueDate||null, notes||null, c.req.param('id')).run();
-  } else {
-    await c.env.NEXUS_OPS.prepare(`INSERT INTO hosting_services (id,website_id,provider,status,cost,billing_cycle,start_date,due_date,notes)
-      VALUES (?,?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), c.req.param('id'), provider, status||'active', cost, billingCycle||'monthly', startDate, dueDate, notes||null).run();
+  try {
+    const { provider, status, cost, billingCycle, startDate, dueDate, notes } = await c.req.json();
+    if (!provider || !startDate || !dueDate) {
+      return c.json({ error: 'Provider, start date, and due date are required' }, 400);
+    }
+    const costVal = (cost === undefined || cost === null || cost === '' || isNaN(Number(cost))) ? 0 : Number(cost);
+    const existing = await c.env.NEXUS_OPS.prepare('SELECT id FROM hosting_services WHERE website_id = ?').bind(c.req.param('id')).first();
+    if (existing) {
+      await c.env.NEXUS_OPS.prepare(`UPDATE hosting_services SET provider=COALESCE(?,provider), status=COALESCE(?,status),
+        cost=COALESCE(?,cost), billing_cycle=COALESCE(?,billing_cycle), start_date=COALESCE(?,start_date),
+        due_date=COALESCE(?,due_date), notes=COALESCE(?,notes), updated_at=datetime('now') WHERE website_id=?`
+      ).bind(provider, status || null, costVal, billingCycle || null, startDate, dueDate, notes || null, c.req.param('id')).run();
+    } else {
+      await c.env.NEXUS_OPS.prepare(`INSERT INTO hosting_services (id,website_id,provider,status,cost,billing_cycle,start_date,due_date,notes)
+        VALUES (?,?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), c.req.param('id'), provider, status || 'active', costVal, billingCycle || 'monthly', startDate, dueDate, notes || null).run();
+    }
+    return c.json({ message: 'Hosting updated' });
+  } catch (err: any) {
+    return c.json({ error: err?.message || 'Failed to update hosting' }, 400);
   }
-  return c.json({ message: 'Hosting updated' });
 });
 
 // PUT /:id/database
 websites.put('/:id/database', authorize('OWNER'), async (c) => {
-  const { provider, status, monthlyCost, billingCycle, startDate, dueDate, notes } = await c.req.json();
-  const existing = await c.env.NEXUS_OPS.prepare('SELECT id FROM database_services WHERE website_id = ?').bind(c.req.param('id')).first();
-  if (existing) {
-    await c.env.NEXUS_OPS.prepare(`UPDATE database_services SET provider=COALESCE(?,provider), status=COALESCE(?,status),
-      monthly_cost=COALESCE(?,monthly_cost), billing_cycle=COALESCE(?,billing_cycle), start_date=COALESCE(?,start_date),
-      due_date=COALESCE(?,due_date), notes=COALESCE(?,notes), updated_at=datetime('now') WHERE website_id=?`
-    ).bind(provider||null, status||null, monthlyCost, billingCycle||null, startDate||null, dueDate||null, notes||null, c.req.param('id')).run();
-  } else {
-    await c.env.NEXUS_OPS.prepare(`INSERT INTO database_services (id,website_id,provider,status,monthly_cost,billing_cycle,start_date,due_date,notes)
-      VALUES (?,?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), c.req.param('id'), provider, status||'active', monthlyCost, billingCycle||'monthly', startDate, dueDate, notes||null).run();
+  try {
+    const { provider, status, monthlyCost, billingCycle, startDate, dueDate, notes } = await c.req.json();
+    if (!provider || !startDate || !dueDate) {
+      return c.json({ error: 'Provider, start date, and due date are required' }, 400);
+    }
+    const costVal = (monthlyCost === undefined || monthlyCost === null || monthlyCost === '' || isNaN(Number(monthlyCost))) ? 0 : Number(monthlyCost);
+    const existing = await c.env.NEXUS_OPS.prepare('SELECT id FROM database_services WHERE website_id = ?').bind(c.req.param('id')).first();
+    if (existing) {
+      await c.env.NEXUS_OPS.prepare(`UPDATE database_services SET provider=COALESCE(?,provider), status=COALESCE(?,status),
+        monthly_cost=COALESCE(?,monthly_cost), billing_cycle=COALESCE(?,billing_cycle), start_date=COALESCE(?,start_date),
+        due_date=COALESCE(?,due_date), notes=COALESCE(?,notes), updated_at=datetime('now') WHERE website_id=?`
+      ).bind(provider, status || null, costVal, billingCycle || null, startDate, dueDate, notes || null, c.req.param('id')).run();
+    } else {
+      await c.env.NEXUS_OPS.prepare(`INSERT INTO database_services (id,website_id,provider,status,monthly_cost,billing_cycle,start_date,due_date,notes)
+        VALUES (?,?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), c.req.param('id'), provider, status || 'active', costVal, billingCycle || 'monthly', startDate, dueDate, notes || null).run();
+    }
+    return c.json({ message: 'Database service updated' });
+  } catch (err: any) {
+    return c.json({ error: err?.message || 'Failed to update database' }, 400);
   }
-  return c.json({ message: 'Database service updated' });
 });
 
 // PUT /:id/server
 websites.put('/:id/server', authorize('OWNER'), async (c) => {
-  const { provider, status, plan, cost, billingCycle, startDate, dueDate, notes } = await c.req.json();
-  const existing = await c.env.NEXUS_OPS.prepare('SELECT id FROM server_services WHERE website_id = ?').bind(c.req.param('id')).first();
-  if (existing) {
-    await c.env.NEXUS_OPS.prepare(`UPDATE server_services SET provider=COALESCE(?,provider), status=COALESCE(?,status),
-      plan=COALESCE(?,plan), cost=COALESCE(?,cost), billing_cycle=COALESCE(?,billing_cycle), start_date=COALESCE(?,start_date),
-      due_date=COALESCE(?,due_date), notes=COALESCE(?,notes), updated_at=datetime('now') WHERE website_id=?`
-    ).bind(provider||null, status||null, plan||null, cost, billingCycle||null, startDate||null, dueDate||null, notes||null, c.req.param('id')).run();
-  } else {
-    await c.env.NEXUS_OPS.prepare(`INSERT INTO server_services (id,website_id,provider,status,plan,cost,billing_cycle,start_date,due_date,notes)
-      VALUES (?,?,?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), c.req.param('id'), provider, status||'operational', plan||null, cost, billingCycle||'monthly', startDate, dueDate, notes||null).run();
+  try {
+    const { provider, status, plan, cost, billingCycle, startDate, dueDate, notes } = await c.req.json();
+    if (!provider || !startDate || !dueDate) {
+      return c.json({ error: 'Provider, start date, and due date are required' }, 400);
+    }
+    const costVal = (cost === undefined || cost === null || cost === '' || isNaN(Number(cost))) ? 0 : Number(cost);
+    const existing = await c.env.NEXUS_OPS.prepare('SELECT id FROM server_services WHERE website_id = ?').bind(c.req.param('id')).first();
+    if (existing) {
+      await c.env.NEXUS_OPS.prepare(`UPDATE server_services SET provider=COALESCE(?,provider), status=COALESCE(?,status),
+        plan=COALESCE(?,plan), cost=COALESCE(?,cost), billing_cycle=COALESCE(?,billing_cycle), start_date=COALESCE(?,start_date),
+        due_date=COALESCE(?,due_date), notes=COALESCE(?,notes), updated_at=datetime('now') WHERE website_id=?`
+      ).bind(provider, status || null, plan || null, costVal, billingCycle || null, startDate, dueDate, notes || null, c.req.param('id')).run();
+    } else {
+      await c.env.NEXUS_OPS.prepare(`INSERT INTO server_services (id,website_id,provider,status,plan,cost,billing_cycle,start_date,due_date,notes)
+        VALUES (?,?,?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), c.req.param('id'), provider, status || 'operational', plan || null, costVal, billingCycle || 'monthly', startDate, dueDate, notes || null).run();
+    }
+    return c.json({ message: 'Server service updated' });
+  } catch (err: any) {
+    return c.json({ error: err?.message || 'Failed to update server' }, 400);
   }
-  return c.json({ message: 'Server service updated' });
 });
 
 // PUT /:id/plan
 websites.put('/:id/plan', authorize('OWNER'), async (c) => {
-  const { name, description, price, billingCycle, features, startDate, renewalDate } = await c.req.json();
-  const existing = await c.env.NEXUS_OPS.prepare('SELECT id FROM plans WHERE website_id = ?').bind(c.req.param('id')).first();
-  if (existing) {
-    await c.env.NEXUS_OPS.prepare(`UPDATE plans SET name=COALESCE(?,name), description=COALESCE(?,description),
-      price=COALESCE(?,price), billing_cycle=COALESCE(?,billing_cycle), features=COALESCE(?,features),
-      start_date=COALESCE(?,start_date), renewal_date=COALESCE(?,renewal_date), updated_at=datetime('now') WHERE website_id=?`
-    ).bind(name||null, description||null, price, billingCycle||null, features ? JSON.stringify(features) : null, startDate||null, renewalDate||null, c.req.param('id')).run();
-  } else {
-    await c.env.NEXUS_OPS.prepare(`INSERT INTO plans (id,website_id,name,description,price,billing_cycle,features,start_date,renewal_date)
-      VALUES (?,?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), c.req.param('id'), name, description||null, price, billingCycle, features ? JSON.stringify(features) : '[]', startDate, renewalDate||null).run();
+  try {
+    const { name, description, price, billingCycle, features, startDate, renewalDate } = await c.req.json();
+    if (!name || !billingCycle || !startDate) {
+      return c.json({ error: 'Name, billing cycle, and start date are required' }, 400);
+    }
+    const priceVal = (price === undefined || price === null || price === '' || isNaN(Number(price))) ? 0 : Number(price);
+    const existing = await c.env.NEXUS_OPS.prepare('SELECT id FROM plans WHERE website_id = ?').bind(c.req.param('id')).first();
+    if (existing) {
+      await c.env.NEXUS_OPS.prepare(`UPDATE plans SET name=COALESCE(?,name), description=COALESCE(?,description),
+        price=COALESCE(?,price), billing_cycle=COALESCE(?,billing_cycle), features=COALESCE(?,features),
+        start_date=COALESCE(?,start_date), renewal_date=COALESCE(?,renewal_date), updated_at=datetime('now') WHERE website_id=?`
+      ).bind(name, description || null, priceVal, billingCycle, features ? JSON.stringify(features) : null, startDate, renewalDate || null, c.req.param('id')).run();
+    } else {
+      await c.env.NEXUS_OPS.prepare(`INSERT INTO plans (id,website_id,name,description,price,billing_cycle,features,start_date,renewal_date)
+        VALUES (?,?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), c.req.param('id'), name, description || null, priceVal, billingCycle, features ? JSON.stringify(features) : '[]', startDate, renewalDate || null).run();
+    }
+    return c.json({ message: 'Plan updated' });
+  } catch (err: any) {
+    return c.json({ error: err?.message || 'Failed to update plan' }, 400);
   }
-  return c.json({ message: 'Plan updated' });
 });
 
 // GET /:id/financial
