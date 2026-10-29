@@ -186,9 +186,21 @@ websites.get('/:id/financial', async (c) => {
   const server = await c.env.NEXUS_OPS.prepare('SELECT * FROM server_services WHERE website_id = ?').bind(c.req.param('id')).first();
   const charges = await c.env.NEXUS_OPS.prepare('SELECT * FROM additional_charges WHERE website_id = ?').bind(c.req.param('id')).all();
 
-  const monthlyTotal = (Number(plan?.price) || 0) + (Number(hosting?.cost) || 0) + (Number(db?.monthly_cost) || 0) + (Number(server?.cost) || 0);
+  const recurring = {
+    plan: Number(plan?.price) || 0,
+    hosting: Number(hosting?.cost) || 0,
+    database: Number(db?.monthly_cost) || 0,
+    server: Number(server?.cost) || 0,
+    otherRecurring: (charges.results || [])
+      .filter((ch: any) => ch.billing_type === 'MONTHLY' && ch.status !== 'cancelled')
+      .reduce((sum: number, ch: any) => sum + (Number(ch.amount) || 0), 0),
+  };
+  const oneTime = (charges.results || [])
+    .filter((ch: any) => ch.billing_type === 'ONE_TIME' && ch.status !== 'cancelled')
+    .reduce((sum: number, ch: any) => sum + (Number(ch.amount) || 0), 0);
+  const monthlyTotal = recurring.plan + recurring.hosting + recurring.database + recurring.server + recurring.otherRecurring;
 
-  return c.json(camelCaseKeys({ plan, hosting, database: db, server, charges: charges.results, monthlyTotal }));
+  return c.json(camelCaseKeys({ recurring, oneTime, monthlyTotal, yearlyTotal: monthlyTotal * 12, plan, hosting, database: db, server, charges: charges.results }));
 });
 
 // GET /:id/maintenance
