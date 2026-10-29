@@ -27,6 +27,11 @@ dashboard.get('/', async (c) => {
     )
   `).first();
 
+  const totalMonitors = await c.env.NEXUS_OPS.prepare('SELECT COUNT(*) as count FROM monitors').first();
+  const activeMonitors = await c.env.NEXUS_OPS.prepare("SELECT COUNT(*) as count FROM monitors WHERE enabled = 1").first();
+  const openIncidents = await c.env.NEXUS_OPS.prepare("SELECT COUNT(*) as count FROM incidents WHERE status = 'OPEN'").first();
+  const resolvedIncidents = await c.env.NEXUS_OPS.prepare("SELECT COUNT(*) as count FROM incidents WHERE status = 'RESOLVED'").first();
+
   return c.json({
     stats: {
       totalWebsites: totalWebsites?.count || 0,
@@ -36,6 +41,10 @@ dashboard.get('/', async (c) => {
       maintenanceWebsites: maintenanceWebsites?.count || 0,
       attentionWebsites: attentionWebsites?.count || 0,
       upcomingDueDates: upcomingDueDates?.count || 0,
+      totalMonitors: totalMonitors?.count || 0,
+      activeMonitors: activeMonitors?.count || 0,
+      openIncidents: openIncidents?.count || 0,
+      resolvedIncidents: resolvedIncidents?.count || 0,
     },
     recentActivity: camelCaseKeys(recentActivity.results),
   });
