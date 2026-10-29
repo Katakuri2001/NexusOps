@@ -37,7 +37,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-background" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/8 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-info/5 rounded-full blur-3xl" />
 
       <div className="w-full max-w-sm relative z-10">
         {/* Logo */}
@@ -47,7 +48,7 @@ export default function LoginPage() {
           transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="text-center mb-8"
         >
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4">
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/25">
             <span className="text-white font-bold text-lg">N</span>
           </div>
           <h1 className="text-lg font-bold tracking-tight">NexusOps</h1>
@@ -60,7 +61,7 @@ export default function LoginPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="bg-elevated border border-border rounded-2xl p-6 space-y-4"
+          className="glass-strong rounded-2xl p-6 space-y-4 glass-highlight relative"
         >
           {error && (
             <motion.div
