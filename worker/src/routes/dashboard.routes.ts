@@ -33,19 +33,17 @@ dashboard.get('/', async (c) => {
   const resolvedIncidents = await c.env.NEXUS_OPS.prepare("SELECT COUNT(*) as count FROM incidents WHERE status = 'RESOLVED'").first();
 
   return c.json({
-    stats: {
-      totalWebsites: totalWebsites?.count || 0,
-      activeCustomers: activeCustomers?.count || 0,
-      totalCustomers: totalCustomers?.count || 0,
-      operationalWebsites: operationalWebsites?.count || 0,
-      maintenanceWebsites: maintenanceWebsites?.count || 0,
-      attentionWebsites: attentionWebsites?.count || 0,
-      upcomingDueDates: upcomingDueDates?.count || 0,
-      totalMonitors: totalMonitors?.count || 0,
-      activeMonitors: activeMonitors?.count || 0,
-      openIncidents: openIncidents?.count || 0,
-      resolvedIncidents: resolvedIncidents?.count || 0,
-    },
+    totalWebsites: totalWebsites?.count || 0,
+    activeCustomers: activeCustomers?.count || 0,
+    totalCustomers: totalCustomers?.count || 0,
+    operationalWebsites: operationalWebsites?.count || 0,
+    maintenanceWebsites: maintenanceWebsites?.count || 0,
+    attentionWebsites: attentionWebsites?.count || 0,
+    upcomingDueDates: upcomingDueDates?.count || 0,
+    totalMonitors: totalMonitors?.count || 0,
+    activeMonitors: activeMonitors?.count || 0,
+    openIncidents: openIncidents?.count || 0,
+    resolvedIncidents: resolvedIncidents?.count || 0,
     recentActivity: camelCaseKeys(recentActivity.results),
   });
 });
