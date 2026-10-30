@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { Env, AuthContext } from '../types';
 import { authenticate, authorize } from '../middleware/auth';
 import { camelCaseKeys } from '../db/transform';
+import { sendNotificationAlert } from '../services/email.service';
 
 const notifications = new Hono<{ Bindings: Env; Variables: { auth: AuthContext } }>();
 
@@ -60,6 +61,36 @@ notifications.post('/', authorize('OWNER'), async (c) => {
   const id = crypto.randomUUID();
   await c.env.NEXUS_OPS.prepare(`INSERT INTO notifications (id,website_id,customer_id,title,message,type,priority)
     VALUES (?,?,?,?,?,?,?)`).bind(id, websiteId||null, customerId, title, message, type||'INFORMATION', priority||'NORMAL').run();
+
+  // Send notification alert emails to owner and assigned technicians (best-effort)
+  try {
+    const websiteName = websiteId
+      ? ((await c.env.NEXUS_OPS.prepare('SELECT name FROM websites WHERE id = ?').bind(websiteId).first())?.name as string | null)
+      : null;
+    const notification = { title, message, type: type || 'INFORMATION', priority: priority || 'NORMAL' };
+
+    // Owner (admin)
+    const owners = await c.env.NEXUS_OPS.prepare("SELECT email, name FROM users WHERE role = 'OWNER' AND is_active = 1").all();
+    for (const o of owners.results || []) {
+      await sendNotificationAlert(c.env, o.email as string, o.name as string, notification, websiteName);
+    }
+
+    // Assigned technicians of the website
+    if (websiteId) {
+      const techs = await c.env.NEXUS_OPS.prepare(`
+        SELECT u.email, u.name FROM technician_website_assignments twa
+        JOIN technicians t ON twa.technician_id = t.id
+        JOIN users u ON t.user_id = u.id
+        WHERE twa.website_id = ? AND u.is_active = 1
+      `).bind(websiteId).all();
+      for (const t of techs.results || []) {
+        await sendNotificationAlert(c.env, t.email as string, t.name as string, notification, websiteName);
+      }
+    }
+  } catch (err: any) {
+    console.error('[notification] email alert failed:', err?.message || err);
+  }
+
   return c.json({ id }, 201);
 });
 

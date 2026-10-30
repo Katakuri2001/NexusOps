@@ -3,6 +3,7 @@ import { Env, AuthContext } from '../types';
 import { authenticate, authorize } from '../middleware/auth';
 import { hashPassword } from '../db/crypto';
 import { camelCaseKeys } from '../db/transform';
+import { sendLoginInvitation } from '../services/email.service';
 
 const customers = new Hono<{ Bindings: Env; Variables: { auth: AuthContext } }>();
 
@@ -86,7 +87,11 @@ customers.post('/', async (c) => {
     c.env.NEXUS_OPS.prepare('INSERT INTO customers (id, user_id, phone, company, address) VALUES (?, ?, ?, ?, ?)').bind(customerId, userId, phone || null, company || null, address || null),
   ]);
 
-  return c.json({ id: customerId, email, name, phone, company, address }, 201);
+  // Send login invitation email (best-effort; never fail the request on email error)
+  const loginUrl = `${(c.env.APP_URL || c.env.FRONTEND_URL || 'http://localhost:3000').split(',')[0].trim()}/login`;
+  const emailResult = await sendLoginInvitation(c.env, email, name, 'CUSTOMER', loginUrl, password);
+
+  return c.json({ id: customerId, email, name, phone, company, address, emailSent: emailResult.success }, 201);
 });
 
 customers.put('/:id', async (c) => {
@@ -98,6 +103,15 @@ customers.put('/:id', async (c) => {
     c.env.NEXUS_OPS.prepare('UPDATE users SET name = COALESCE(?, name), email = COALESCE(?, email), updated_at = datetime("now") WHERE id = ?').bind(name || null, email || null, customer.user_id),
     c.env.NEXUS_OPS.prepare('UPDATE customers SET phone = COALESCE(?, phone), company = COALESCE(?, company), address = COALESCE(?, address), updated_at = datetime("now") WHERE id = ?').bind(phone || null, company || null, address || null, c.req.param('id')),
   ]);
+
+  // Send account-updated notice (best-effort; login link only, password unchanged)
+  if (name || email) {
+    const userRow = await c.env.NEXUS_OPS.prepare('SELECT email, name FROM users WHERE id = ?').bind(customer.user_id).first();
+    if (userRow) {
+      const loginUrl = `${(c.env.APP_URL || c.env.FRONTEND_URL || 'http://localhost:3000').split(',')[0].trim()}/login`;
+      await sendLoginInvitation(c.env, userRow.email as string, (name || userRow.name) as string, 'CUSTOMER', loginUrl);
+    }
+  }
 
   return c.json({ message: 'Customer updated' });
 });

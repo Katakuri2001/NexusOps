@@ -1,5 +1,6 @@
 import { Env } from '../types';
 import { openIncidentIfNeeded, resolveIncident } from './incident.service';
+import { sendNotificationAlert } from './email.service';
 
 export type HealthState = 'UP' | 'DOWN' | 'DEGRADED' | 'PAUSED' | 'UNKNOWN';
 
@@ -194,7 +195,7 @@ export function computeHealth(monitor: MonitorLike, checks: CheckResult[], now: 
   return 'UP';
 }
 
-export async function handleCheckOutcome(db: D1Database, monitor: MonitorLike, result: CheckResult): Promise<void> {
+export async function handleCheckOutcome(env: any, db: D1Database, monitor: MonitorLike, result: CheckResult): Promise<void> {
   const writeActivity = async (action: string, entityId: string, metadata: Record<string, unknown>) => {
     await db
       .prepare(`INSERT INTO activity_logs (id, user_id, action, entity, entity_id, metadata, ip_address, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
@@ -230,6 +231,26 @@ export async function handleCheckOutcome(db: D1Database, monitor: MonitorLike, r
     if (incident) {
       await writeNotification('WARNING', `Website down: ${monitor.name}`, `Automated monitoring detected a failed check for ${monitor.name} (${monitor.url}).`);
       await writeActivity('MONITOR_ALERT', incident.id, { monitorId: monitor.id, websiteId: monitor.websiteId, incidentId: incident.id, outcome: 'failed' });
+
+      // Email alert to owner and assigned technicians (best-effort)
+      try {
+        const alert = { title: `Website down: ${monitor.name}`, message: `Automated monitoring detected a failed check for ${monitor.name} (${monitor.url}).`, type: 'WARNING', priority: 'IMPORTANT' };
+        const owners = await db.prepare("SELECT email, name FROM users WHERE role = 'OWNER' AND is_active = 1").all();
+        for (const o of owners.results || []) {
+          await sendNotificationAlert(env, o.email as string, o.name as string, alert, monitor.name);
+        }
+        const techs = await db.prepare(`
+          SELECT u.email, u.name FROM technician_website_assignments twa
+          JOIN technicians t ON twa.technician_id = t.id
+          JOIN users u ON t.user_id = u.id
+          WHERE twa.website_id = ? AND u.is_active = 1
+        `).bind(monitor.websiteId).all();
+        for (const t of techs.results || []) {
+          await sendNotificationAlert(env, t.email as string, t.name as string, alert, monitor.name);
+        }
+      } catch (err: any) {
+        console.error('[monitoring] alert email failed:', err?.message || err);
+      }
     }
     return;
   }
@@ -240,6 +261,26 @@ export async function handleCheckOutcome(db: D1Database, monitor: MonitorLike, r
     if (resolved) {
       await writeNotification('INFORMATION', `Website recovered: ${monitor.name}`, `Automated monitoring detected recovery for ${monitor.name} (${monitor.url}).`);
       await writeActivity('MONITOR_RESOLVED', open.id, { monitorId: monitor.id, websiteId: monitor.websiteId, incidentId: open.id, outcome: 'recovered' });
+
+      // Recovery email to owner and assigned technicians (best-effort)
+      try {
+        const alert = { title: `Website recovered: ${monitor.name}`, message: `Automated monitoring detected recovery for ${monitor.name} (${monitor.url}).`, type: 'INFORMATION', priority: 'NORMAL' };
+        const owners = await db.prepare("SELECT email, name FROM users WHERE role = 'OWNER' AND is_active = 1").all();
+        for (const o of owners.results || []) {
+          await sendNotificationAlert(env, o.email as string, o.name as string, alert, monitor.name);
+        }
+        const techs = await db.prepare(`
+          SELECT u.email, u.name FROM technician_website_assignments twa
+          JOIN technicians t ON twa.technician_id = t.id
+          JOIN users u ON t.user_id = u.id
+          WHERE twa.website_id = ? AND u.is_active = 1
+        `).bind(monitor.websiteId).all();
+        for (const t of techs.results || []) {
+          await sendNotificationAlert(env, t.email as string, t.name as string, alert, monitor.name);
+        }
+      } catch (err: any) {
+        console.error('[monitoring] recovery email failed:', err?.message || err);
+      }
     }
   }
 }

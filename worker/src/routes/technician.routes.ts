@@ -3,6 +3,7 @@ import { Env, AuthContext } from '../types';
 import { authenticate, authorize } from '../middleware/auth';
 import { hashPassword } from '../db/crypto';
 import { camelCaseKeys } from '../db/transform';
+import { sendLoginInvitation } from '../services/email.service';
 
 const technicians = new Hono<{ Bindings: Env; Variables: { auth: AuthContext } }>();
 
@@ -97,7 +98,36 @@ technicians.post('/', async (c) => {
     c.env.NEXUS_OPS.prepare('INSERT INTO technicians (id, user_id, specialization) VALUES (?, ?, ?)').bind(techId, userId, specialization || null),
   ]);
 
-  return c.json({ id: techId, email, name, specialization }, 201);
+  const loginUrl = `${(c.env.APP_URL || c.env.FRONTEND_URL || 'http://localhost:3000').split(',')[0].trim()}/login`;
+  const emailResult = await sendLoginInvitation(c.env, email, name, 'TECHNICIAN', loginUrl, password);
+
+  return c.json({ id: techId, email, name, specialization, emailSent: emailResult.success }, 201);
+});
+
+technicians.put('/:id', authorize('OWNER'), async (c) => {
+  const { name, email, specialization } = await c.req.json();
+  const tech = await c.env.NEXUS_OPS.prepare('SELECT user_id FROM technicians WHERE id = ?').bind(c.req.param('id')).first();
+  if (!tech) return c.json({ error: 'Technician not found' }, 404);
+
+  if (email) {
+    const existing = await c.env.NEXUS_OPS.prepare('SELECT id FROM users WHERE email = ? AND id != ?').bind(email, tech.user_id).first();
+    if (existing) return c.json({ error: 'Email already exists' }, 409);
+  }
+
+  await c.env.NEXUS_OPS.batch([
+    c.env.NEXUS_OPS.prepare('UPDATE users SET name = COALESCE(?, name), email = COALESCE(?, email), updated_at = datetime("now") WHERE id = ?').bind(name || null, email || null, tech.user_id),
+    c.env.NEXUS_OPS.prepare('UPDATE technicians SET specialization = COALESCE(?, specialization), updated_at = datetime("now") WHERE id = ?').bind(specialization || null, c.req.param('id')),
+  ]);
+
+  if (name || email) {
+    const userRow = await c.env.NEXUS_OPS.prepare('SELECT email, name FROM users WHERE id = ?').bind(tech.user_id).first();
+    if (userRow) {
+      const loginUrl = `${(c.env.APP_URL || c.env.FRONTEND_URL || 'http://localhost:3000').split(',')[0].trim()}/login`;
+      await sendLoginInvitation(c.env, userRow.email as string, (name || userRow.name) as string, 'TECHNICIAN', loginUrl);
+    }
+  }
+
+  return c.json({ message: 'Technician updated' });
 });
 
 technicians.patch('/:id/toggle-active', async (c) => {

@@ -5,6 +5,9 @@ export interface Env {
   JWT_ACCESS_EXPIRY: string;
   JWT_REFRESH_EXPIRY: string;
   FRONTEND_URL: string;
+  RESEND_API_KEY?: string;
+  RESEND_FROM?: string;
+  APP_URL?: string;
 }
 
 export interface JwtPayload {
