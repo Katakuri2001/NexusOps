@@ -36,6 +36,9 @@ app.use('/api/', limiter);
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
+  // Only count FAILED login attempts: successful logins (incl. CORS OPTIONS + page
+  // refreshes in dev) must not lock legitimate users out of the portal.
+  skipSuccessfulRequests: true,
   message: 'Too many authentication attempts, please try again later.',
 });
 app.use('/api/auth/login', authLimiter);

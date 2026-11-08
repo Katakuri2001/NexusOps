@@ -122,7 +122,7 @@ monitoring.post('/monitors/:id/checks', authorize('OWNER'), async (c) => {
   };
 
   const result = await runCheck(c.env.NEXUS_OPS, monitorLike);
-  await handleCheckOutcome(c.env.NEXUS_OPS, monitorLike, result);
+  await handleCheckOutcome(c.env, c.env.NEXUS_OPS, monitorLike, result);
   return c.json(result, result.success ? 200 : 207);
 });
 

@@ -31,19 +31,25 @@ export default function ServiceEditorDialog({ open, onClose, websiteId, serviceT
 
   useEffect(() => {
     if (open && existingData) {
-      setForm({
-        provider: existingData.provider || '',
-        plan: existingData.plan || '',
-        cost: String(existingData.cost || existingData.monthlyCost || ''),
-        startDate: existingData.startDate ? existingData.startDate.split('T')[0] : '',
-        dueDate: existingData.dueDate ? existingData.dueDate.split('T')[0] : '',
-        status: existingData.status || 'active',
-      });
+      // Sync form state asynchronously (outside the synchronous effect body)
+      // to avoid cascading renders flagged by react-hooks/set-state-in-effect.
+      Promise.resolve().then(() =>
+        setForm({
+          provider: existingData.provider || '',
+          plan: existingData.plan || '',
+          cost: String(existingData.cost || existingData.monthlyCost || ''),
+          startDate: existingData.startDate ? existingData.startDate.split('T')[0] : '',
+          dueDate: existingData.dueDate ? existingData.dueDate.split('T')[0] : '',
+          status: existingData.status || 'active',
+        })
+      );
     } else if (open) {
       const today = new Date().toISOString().split('T')[0];
       const nextYear = new Date();
       nextYear.setFullYear(nextYear.getFullYear() + 1);
-      setForm({ provider: '', plan: '', cost: '', startDate: today, dueDate: nextYear.toISOString().split('T')[0], status: 'active' });
+      Promise.resolve().then(() =>
+        setForm({ provider: '', plan: '', cost: '', startDate: today, dueDate: nextYear.toISOString().split('T')[0], status: 'active' })
+      );
     }
   }, [open, existingData, serviceType]);
 

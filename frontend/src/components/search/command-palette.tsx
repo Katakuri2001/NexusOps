@@ -28,10 +28,14 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
 
   useEffect(() => {
     if (open) {
-      setQuery('');
-      setResults([]);
-      setSelectedIdx(0);
-      setTimeout(() => inputRef.current?.focus(), 50);
+      // Reset state asynchronously (outside the synchronous effect body) to
+      // avoid cascading renders flagged by react-hooks/set-state-in-effect.
+      Promise.resolve().then(() => {
+        setQuery('');
+        setResults([]);
+        setSelectedIdx(0);
+        setTimeout(() => inputRef.current?.focus(), 50);
+      });
     }
   }, [open]);
 

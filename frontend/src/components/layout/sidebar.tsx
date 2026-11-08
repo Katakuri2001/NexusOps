@@ -92,7 +92,7 @@ export default function Sidebar({ open, onClose, onSearchOpen }: {
   onClose: () => void;
   onSearchOpen: () => void;
 }) {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
   const pathname = usePathname();
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -108,7 +108,10 @@ export default function Sidebar({ open, onClose, onSearchOpen }: {
     return () => clearInterval(interval);
   }, []);
 
-  const role = user?.role || 'CUSTOMER';
+  // Suppress nav until auth resolves so the wrong role's links never flash.
+  if (loading || !user) return null;
+
+  const role = user.role;
   const groups = navGroups[role] || navGroups.CUSTOMER;
 
   const isActive = (href: string) => {

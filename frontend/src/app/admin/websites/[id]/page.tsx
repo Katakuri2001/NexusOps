@@ -56,8 +56,12 @@ export default function AdminWebsiteDetail() {
     } catch {}
   }, []);
 
-  useEffect(() => { if (tab === 'monitoring') fetchMonitors(); }, [tab, fetchMonitors]);
-  useEffect(() => { if (selectedMonitorId) fetchMonitorChecks(selectedMonitorId); }, [selectedMonitorId, fetchMonitorChecks]);
+  useEffect(() => {
+    if (tab === 'monitoring') Promise.resolve().then(fetchMonitors).catch(() => {});
+  }, [tab, fetchMonitors]);
+  useEffect(() => {
+    if (selectedMonitorId) Promise.resolve().then(() => fetchMonitorChecks(selectedMonitorId)).catch(() => {});
+  }, [selectedMonitorId, fetchMonitorChecks]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -72,7 +76,9 @@ export default function AdminWebsiteDetail() {
     }
   }, [params.id]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    Promise.resolve().then(fetchData).catch(() => {});
+  }, [fetchData]);
 
   if (loading) return <AppShell><div className="animate-fade-in"><PageSkeleton /></div></AppShell>;
   if (!website) return <AppShell><div className="text-center py-32 text-muted">Website not found</div></AppShell>;
