@@ -7,7 +7,7 @@ import { User } from '@/types';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ user: any; accessToken: string; refreshToken: string }>;
+  login: (email: string, password: string) => Promise<{ user: any; accessToken: string; refreshToken?: string }>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }

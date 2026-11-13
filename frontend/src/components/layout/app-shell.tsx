@@ -39,9 +39,12 @@ const bottomNavItems: Record<string, { href: string; label: string; icon: React.
 };
 
 function MobileBottomNav() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const pathname = usePathname();
-  const role = user?.role || 'CUSTOMER';
+  // Don't render nav until auth state resolves - prevents the wrong (customer)
+  // portal nav from flashing while the session is being restored.
+  if (loading || !user) return null;
+  const role = user.role;
   const items = bottomNavItems[role] || bottomNavItems.CUSTOMER;
 
   return (
@@ -71,6 +74,7 @@ function MobileBottomNav() {
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const { loading: authLoading } = useAuth();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -82,6 +86,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Hold the full shell (sidebar + bottom nav + content) until auth resolves so
+  // role-dependent UI never flashes the wrong portal.
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div data-testid="app-shell-loading" className="w-6 h-6 border-2 border-border border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

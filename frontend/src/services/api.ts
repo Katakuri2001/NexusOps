@@ -6,17 +6,20 @@ class ApiClient {
 
   constructor() {
     if (typeof window !== 'undefined') {
+      // Only the short-lived access token is stored client-side. The refresh
+      // token lives in an httpOnly cookie (path: /api/auth) set by the backend,
+      // so the browser sends it automatically and JS cannot read it.
       this.accessToken = localStorage.getItem('accessToken');
-      this.refreshToken = localStorage.getItem('refreshToken');
     }
   }
 
-  setTokens(access: string, refresh: string) {
+  setTokens(access: string, refresh?: string | null) {
     this.accessToken = access;
-    this.refreshToken = refresh;
+    this.refreshToken = refresh || this.refreshToken || null;
     if (typeof window !== 'undefined') {
       localStorage.setItem('accessToken', access);
-      localStorage.setItem('refreshToken', refresh);
+      // Legacy cleanup: never persist refresh tokens client-side.
+      localStorage.removeItem('refreshToken');
     }
   }
 
@@ -42,22 +45,30 @@ class ApiClient {
     const res = await fetch(`${API_BASE}${path}`, {
       ...options,
       headers,
+      credentials: 'include', // needed so the httpOnly refresh cookie travels along
     });
 
-    if (res.status === 401 && this.refreshToken) {
+    if (res.status === 401) {
       try {
+        // Cookie-based refresh first (no token in body - backend reads the
+        // httpOnly cookie); fall back to a remembered body token for the
+        // worker/D1 API variant until it migrates to cookies.
+        const refreshBody = this.refreshToken
+          ? JSON.stringify({ refreshToken: this.refreshToken })
+          : '{}';
         const refreshRes = await fetch(`${API_BASE}/api/auth/refresh`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken: this.refreshToken }),
+          body: refreshBody,
+          credentials: 'include',
         });
 
         if (refreshRes.ok) {
           const data = await refreshRes.json();
-          this.setTokens(data.accessToken, data.refreshToken);
+          this.setTokens(data.accessToken, data.refreshToken ?? null);
           headers['Authorization'] = `Bearer ${data.accessToken}`;
 
-          const retryRes = await fetch(`${API_BASE}${path}`, { ...options, headers });
+          const retryRes = await fetch(`${API_BASE}${path}`, { ...options, headers, credentials: 'include' });
           if (!retryRes.ok) {
             const error = await retryRes.json().catch(() => ({ error: 'Request failed' }));
             throw new Error(error.error || `HTTP ${retryRes.status}`);
@@ -85,12 +96,13 @@ class ApiClient {
     const data = await this.request<{
       user: any;
       accessToken: string;
-      refreshToken: string;
+      refreshToken?: string;
     }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    this.setTokens(data.accessToken, data.refreshToken);
+    // Persist only the access token; backend set the httpOnly refresh cookie.
+    this.setTokens(data.accessToken, null);
     return data;
   }
 

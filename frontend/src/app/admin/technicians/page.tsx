@@ -22,7 +22,9 @@ export default function AdminTechnicians() {
     api.getTechnicians().then(setTechnicians).catch(() => {}).finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchTechnicians(); }, []);
+  useEffect(() => {
+    Promise.resolve().then(fetchTechnicians).catch(() => {});
+  }, []);
 
   return (
     <AppShell>

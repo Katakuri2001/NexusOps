@@ -29,7 +29,11 @@ export default function CreateWebsiteDialog({ open, onClose, onCreated }: Create
   useEffect(() => {
     if (open) {
       api.getCustomers().then(setCustomers).catch(() => {});
-      setForm({ name: '', domain: '', description: '', developerName: '', websiteType: '', customerId: '', status: 'DEVELOPMENT' });
+      // Reset the form asynchronously (in a promise callback) instead of calling
+      // setState synchronously in the effect body - avoids cascading renders.
+      Promise.resolve().then(() =>
+        setForm({ name: '', domain: '', description: '', developerName: '', websiteType: '', customerId: '', status: 'DEVELOPMENT' })
+      );
     }
   }, [open]);
 

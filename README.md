@@ -85,15 +85,11 @@ npm run dev
 
 The worker schedules monitoring checks every 5 minutes and stores results in Cloudflare D1.
 
-## Demo login
+## Demo accounts
 
-Use the seeded accounts to log in from the frontend:
+Seed scripts create three demo accounts (Owner, Customer, Technician - emails `admin@nexusops.com`, `john@example.com`, `mike@nexusops.com`). The login page includes one-click demo fills.
 
-| Role | Email | Password |
-| --- | --- | --- |
-| Owner | admin@nexusops.com | admin123 |
-| Customer | john@example.com | customer123 |
-| Technician | mike@nexusops.com | tech123 |
+> Passwords are set by the seed scripts (`backend/src/utils/seed.ts`, `worker/src/db/seed.sql`) and are intentionally not documented here. Rotate them before any shared or production deployment. The login page's demo buttons only apply with locally seeded development data.
 
 ## Key product areas
 

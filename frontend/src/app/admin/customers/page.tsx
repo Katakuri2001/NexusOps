@@ -24,7 +24,11 @@ export default function AdminCustomers() {
     api.getCustomers().then(setCustomers).catch(() => {}).finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchCustomers(); }, []);
+  useEffect(() => {
+    // Kick off after the current render pass (microtask) so the synchronous
+    // setLoading call inside fetchCustomers doesn't cascade renders.
+    Promise.resolve().then(fetchCustomers).catch(() => {});
+  }, []);
 
   return (
     <AppShell>

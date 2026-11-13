@@ -88,7 +88,7 @@ async function runDueChecks(env: Env): Promise<void> {
         sslExpiryThresholdDays: Number(m.ssl_expiry_threshold_days || 30),
       };
       const result = await runCheck(env.NEXUS_OPS, monitorLike);
-      await handleCheckOutcome(env.NEXUS_OPS, monitorLike, result);
+      await handleCheckOutcome(env, env.NEXUS_OPS, monitorLike, result);
     } finally {
       runningChecks.delete(m.id);
     }
